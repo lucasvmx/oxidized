@@ -9,7 +9,7 @@
 
 Oxidized is a network device configuration backup tool. It's a RANCID replacement!
 
-Light and extensible, Oxidized supports over 130 operating system types.
+It is light and extensible and supports over 130 operating system types.
 
 Feature highlights:
 
@@ -17,13 +17,13 @@ Feature highlights:
 * Restful API to a move node immediately to head-of-queue (GET/POST /node/next/[NODE])
 * Syslog udp+file example to catch config change events (IOS/JunOS) and trigger a config fetch
   * Will signal which IOS/JunOS user made the change, can then be used by output modules (via POST)
-  * The `git` output module uses this info - 'git blame' will show who changed each line, and when
+  * The `git` output module uses this info - 'git blame' will show who changed each line
 * Restful API to reload list of nodes (GET /reload)
 * Restful API to fetch configurations (/node/fetch/[NODE] or /node/fetch/group/[NODE])
 * Restful API to show list of nodes (GET /nodes)
 * Restful API to show list of version for a node (/node/version[NODE]) and diffs
 
-Check out the [Oxidized TREX 2014 presentation](http://youtu.be/kBQ_CTUuqeU#t=3h) video on YouTube!
+Check out the [Oxidized TREX 2014 presentation](http://youtu.be/kBQ_CTUuqeU?t=3h) video on YouTube!
 
 > :warning: [Maintainer Wanted!](#help-needed) :warning:
 >
@@ -67,7 +67,8 @@ Check out the [Oxidized TREX 2014 presentation](http://youtu.be/kBQ_CTUuqeU#t=3h
       * [Hook: ciscosparkdiff](docs/Hooks.md#hook-type-ciscosparkdiff)
 5. [Creating and Extending Models](docs/Creating-Models.md)
 6. [Help](#help)
-7. [Ruby API](docs/Ruby-API.md#ruby-api)
+7. [Help Needed](#help-needed)
+8. [Ruby API](docs/Ruby-API.md#ruby-api)
     * [Input](docs/Ruby-API.md#input)
     * [Output](docs/Ruby-API.md#output)
     * [Source](docs/Ruby-API.md#source)
@@ -171,7 +172,7 @@ rake install
 
 ### Running with Docker
 
-Currently, Docker Hub automatically builds the master branch as [oxidized/oxidized](https://hub.docker.com/r/oxidized/oxidized/), you can make use of this container or build your own.
+Currently, Docker Hub automatically builds the master branch for linux/amd64 and linux/arm64 platforms as [oxidized/oxidized](https://hub.docker.com/r/oxidized/oxidized/), you can make use of this container or build your own.
 
 To build your own, clone git repo:
 
@@ -391,38 +392,14 @@ If you need help with Oxidized then we have a few methods you can use to get in 
 
 ## Help Needed
 
-As things stand right now, `oxidized` is maintained by a single person. A great
-many [contributors](https://github.com/ytti/oxidized/graphs/contributors) have
-helped further the software, however contributions are not the same as ongoing
-owner- and maintainer-ship. It appears that many companies use the software to
-manage their network infrastructure, this is great news! But without additional
-help to maintain the software and put out releases, the future of oxidized
-might be less bright. The current pace of development and the much needed
-refactoring simply are not sustainable if they are to be driven by a single
-person.
+As things stand right now, `oxidized` is maintained by very few people.
+We would appreciate more individuals and companies getting involved in Oxidized.
 
-## Maintainers
+Beyond software development, documentation or maintenance of Oxidized, you could
+become a model maintainer, which can be done with little burden and would be a
+big help to the community.
 
-If you would like to be a maintainer for Oxidized then please read through the below and see if it's something you would like to help with. It's not a requirement that you can tick all the boxes below but it helps :)
-
-* Triage on issues, review pull requests and help answer any questions from users.
-* Above average knowledge of the Ruby programming language.
-* Professional experience with both oxidized and some other config backup tool (like rancid).
-* Ability to keep a cool head, and enjoy interaction with end users! :)
-* A desire and passion to help drive `oxidized` towards its `1.x.x` stage of life
-  * Help refactor the code
-  * Rework the core infrastructure
-* Permission from your employer to contribute to open source projects
-
-## YES, I WANT TO HELP
-
-Awesome! Simply send an e-mail to Saku Ytti at <saku@ytti.fi>.
-
-## Further reading
-
-Brian Anderson (from Rust fame) wrote an [excellent
-post](http://brson.github.io/2017/04/05/minimally-nice-maintainer) on what it
-means to be a maintainer.
+Interested? Have a look at [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License and Copyright
 

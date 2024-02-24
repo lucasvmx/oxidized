@@ -5,6 +5,12 @@ class FortiOS < Oxidized::Model
 
   prompt /^([-\w.~]+(\s[(\w\-.)]+)?~?\s?[#>$]\s?)$/
 
+  # When a post-login-banner is enabled, you have to press "a" to log in
+  expect /^\(Press\s'a'\sto\saccept\):/ do |data, re|
+    send 'a'
+    data.sub re, ''
+  end
+
   expect /^--More--\s$/ do |data, re|
     send ' '
     data.sub re, ''
@@ -23,6 +29,7 @@ class FortiOS < Oxidized::Model
     cfg.gsub! /(set (?:passwd|password|key|group-password|auth-password-l1|auth-password-l2|rsso|history0|history1)) .+/, '\\1 <configuration removed>'
     cfg.gsub! /(set md5-key [0-9]+) .+/, '\\1 <configuration removed>'
     cfg.gsub! /(set private-key ).*?-+END (ENCRYPTED|RSA|OPENSSH) PRIVATE KEY-+\n?"$/m, '\\1<configuration removed>'
+    cfg.gsub! /(set privatekey ).*?-+END (ENCRYPTED|RSA|OPENSSH) PRIVATE KEY-+\n?"$/m, '\\1<configuration removed>'
     cfg.gsub! /(set ca )"-+BEGIN.*?-+END CERTIFICATE-+"$/m, '\\1<configuration removed>'
     cfg.gsub! /(set csr ).*?-+END CERTIFICATE REQUEST-+"$/m, '\\1<configuration removed>'
     cfg
@@ -38,7 +45,7 @@ class FortiOS < Oxidized::Model
     cfg.gsub! /(Disk Usage\s+:\s+)(.*)/, '\1<stripped>'
     cfg.gsub! /(^\S+ (?:disk|DB):\s+)(.*)/, '\1<stripped>\3'
     cfg.gsub! /(VM Registration:\s+)(.*)/, '\1<stripped>\3'
-    cfg.gsub! /(Virus-DB|Extended DB|IPS-DB|IPS-ETDB|APP-DB|INDUSTRIAL-DB|Botnet DB|IPS Malicious URL Database|AV AI\/ML Model|IoT-Detect).*/, '\\1 <db version stripped>'
+    cfg.gsub! /(Virus-DB|Extended DB|FMWP-DB|IPS-DB|IPS-ETDB|APP-DB|INDUSTRIAL-DB|Botnet DB|IPS Malicious URL Database|AV AI\/ML Model|IoT-Detect).*/, '\\1 <db version stripped>'
     comment cfg
   end
 
@@ -66,7 +73,7 @@ class FortiOS < Oxidized::Model
 
     cfg << cmd('end') if @vdom_enabled
 
-    ['show full-configuration | grep .', 'show full-configuration', 'show'].each do |fullcmd|
+    ['show | grep .', 'show full-configuration', 'show'].each do |fullcmd|
       fullcfg = cmd(fullcmd)
       next if fullcfg.lines[1..3].join =~ /(Parsing error at|command parse error)/ # Don't show for unsupported devices (e.g. FortiAnalyzer, FortiManager, FortiMail)
 
