@@ -38,6 +38,7 @@ Check out the [Oxidized TREX 2014 presentation](http://youtu.be/kBQ_CTUuqeU?t=3h
     * [FreeBSD](#freebsd)
     * [Build from Git](#build-from-git)
     * [Docker](#running-with-docker)
+    * [Podman-Compose](#running-with-podman-compose)
     * [Installing Ruby 2.3 using RVM](#installing-ruby-23-using-rvm)
 3. [Initial Configuration](#configuration)
 4. [Configuration](docs/Configuration.md)
@@ -100,23 +101,7 @@ gem install oxidized-script oxidized-web # If you don't install oxidized-web, en
 
 ### CentOS, Oracle Linux, Red Hat Linux
 
-On CentOS 6 and 7 / RHEL 6 and 7, begin by installing Ruby 2.3 or greater. This can be accomplished in one of several ways:
-
-Install Ruby 2.3 from [SCL](https://www.softwarecollections.org/en/scls/rhscl/rh-ruby23/):
-
-```shell
-yum install centos-release-scl
-yum install rh-ruby30 rh-ruby30-ruby-devel
-scl enable rh-ruby30 bash
-```
-
-The following additional packages will be required to build the dependencies:
-
-```shell
-yum install make cmake which sqlite-devel openssl-devel libssh2-devel ruby gcc ruby-devel libicu-devel gcc-c++
-```
-
-Alternatively, install Ruby 2.6 via RVM by following the instructions:
+On CentOS 6 and 7 / RHEL 6 and 7, begin by installing Ruby 3.1 via RVM by following the instructions:
 
 Make sure you dont have any leftover ruby:
 ```yum erase ruby```
@@ -128,8 +113,8 @@ sudo gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A17031138
 curl -sSL https://get.rvm.io | bash -s stable
 source /etc/profile.d/rvm.sh
 rvm requirements run
-rvm install 3.0
-rvm use 3.0
+rvm install 3.1
+rvm use 3.1
 ```
 
 Install oxidized requirements:
@@ -199,7 +184,7 @@ Run the container for the first time to initialize the config:
 _Note: this step in only required for creating the Oxidized configuration file and can be skipped if you already have one._
 
 ```shell
-docker run --rm -v /etc/oxidized:/home/oxidized/.config/oxidized -p 8888:8888/tcp -t oxidized/oxidized:latest oxidized
+docker run --rm -v /etc/oxidized:/home/oxidized/.config/oxidized -p 8888:8888/tcp --user oxidized -t oxidized/oxidized:latest oxidized
 ```
 
 If the RESTful API and Web Interface are enabled, on the docker host running the container
@@ -255,6 +240,10 @@ If you need to use an internal CA (e.g. to connect to an private github instance
 ```shell
 docker run -v /etc/oxidized:/home/oxidized/.config/oxidized -v /path/to/MY-CA.crt:/usr/local/share/ca-certificates/MY-CA.crt -p 8888:8888/tcp -e UPDATE_CA_CERTIFICATES=true -t oxidized/oxidized:latest
 ```
+
+### Running with podman-compose
+Under [examples/podman-compose](examples/podman-compose), you will find a complete
+example of how to integrate the container into a docker-compose.yml file.
 
 ### Installing Ruby 2.3 using RVM
 
