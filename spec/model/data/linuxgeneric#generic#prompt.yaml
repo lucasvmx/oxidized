@@ -1,0 +1,5 @@
+pass:
+  - 'robert@hostname:~$ '
+fail:
+ - "hostname login: "
+ - "Password: "

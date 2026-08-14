@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class JunOS < Oxidized::Model
   using Refinements
   comment '# '
@@ -17,6 +19,10 @@ class JunOS < Oxidized::Model
     cfg.gsub!(/community (\S+) {/, 'community <hidden> {')
     cfg.gsub!(/(ssh-(rsa|dsa|ecdsa|ecdsa-sk|ed25519|ed25519-sk) )".*; ## SECRET-DATA/, '<secret removed>')
     cfg.gsub!(/ "\$\d\$\S+; ## SECRET-DATA/, ' <secret removed>;')
+    # archive-site URLs may carry a cleartext password (user:pass@host) that
+    # Junos does not tag with "## SECRET-DATA", e.g. under
+    # system archival configuration archive-sites
+    cfg.gsub!(/((?:ftp|pasvftp|sftp|scp|https?):\/\/[^\/@"]+):[^@"]+@/, '\1:<secret removed>@')
     cfg
   end
 
@@ -26,20 +32,24 @@ class JunOS < Oxidized::Model
   end
 
   post do
-    out = ''
+    out = String.new
     case @model
     when 'mx960'
       out << cmd('show chassis fabric reachability') { |cfg| comment cfg }
     when /^(ex22|ex3[34]|ex4|ex8|qfx)/
       out << cmd('show virtual-chassis') { |cfg| comment cfg }
+    when /^srx/
+      out << cmd('show chassis cluster status') do |cfg|
+        cfg.lines.count <= 1 && cfg.include?("error:") ? String.new : comment(cfg)
+      end
     end
     out
   end
 
   cmd('show chassis hardware') { |cfg| comment cfg }
   cmd('show system license') do |cfg|
-    cfg.gsub!(/  fib-scale\s+(\d+)/, '  fib-scale                       <count>')
-    cfg.gsub!(/  rib-scale\s+(\d+)/, '  rib-scale                       <count>')
+    cfg.gsub!(/  fib[-\s]scale\s+(\d+)/i, '  fib-scale                       <count>')
+    cfg.gsub!(/  rib[-\s]scale\s+(\d+)/i, '  rib-scale                       <count>')
     comment cfg
   end
   cmd('show system license keys') { |cfg| comment cfg }

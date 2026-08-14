@@ -2,6 +2,8 @@ module Oxidized
   require 'oxidized/job'
   require 'oxidized/jobs'
   class Worker
+    include SemanticLogger::Loggable
+
     def initialize(nodes)
       @jobs_done  = 0
       @nodes      = nodes
@@ -17,27 +19,28 @@ module Oxidized
       @jobs.work
 
       while @jobs.size < @jobs.want
-        Oxidized.logger.debug "lib/oxidized/worker.rb: Jobs running: #{@jobs.size} of #{@jobs.want} - ended: #{@jobs_done} of #{@nodes.size}"
+        logger.debug "Jobs running: #{@jobs.size} of #{@jobs.want} - ended: " \
+                     "#{@jobs_done} of #{@nodes.size}"
         # ask for next node in queue non destructive way
         nextnode = @nodes.first
-        unless nextnode.last.nil?
-          # Set unobtainable value for 'last' if interval checking is disabled
-          last = Oxidized.config.interval.zero? ? Time.now.utc + 10 : nextnode.last.end
-          break if last + Oxidized.config.interval > Time.now.utc
-        end
+        break if Oxidized.config.interval.zero? && !nextnode.nexted?
+
+        nextnode.nexted = false
+        break if !nextnode.last.nil? && (nextnode.last.end + Oxidized.config.interval > Time.now.utc)
+
         # shift nodes and get the next node
         node = @nodes.get
         node.running? ? next : node.running = true
 
         @jobs.push Job.new node
-        Oxidized.logger.debug "lib/oxidized/worker.rb: Added #{node.group}/#{node.name} to the job queue"
+        logger.debug "Added #{node.group}/#{node.name} to the job queue"
       end
 
       if cycle_finished?
         run_done_hook
         exit 0 if Oxidized.config.run_once
       end
-      Oxidized.logger.debug("lib/oxidized/worker.rb: #{@jobs.size} jobs running in parallel") unless @jobs.empty?
+      logger.debug("#{@jobs.size} jobs running in parallel") unless @jobs.empty?
     end
 
     def process(job)
@@ -52,7 +55,7 @@ module Oxidized
         process_failure node, job
       end
     rescue NodeNotFound
-      Oxidized.logger.warn "#{node.group}/#{node.name} not found, removed while collecting?"
+      logger.warn "#{node.group}/#{node.name} not found, removed while collecting?"
     end
 
     def reload
@@ -61,21 +64,43 @@ module Oxidized
 
     private
 
+    def significant_changes?(job, output)
+      node = job.node
+      model = node.model
+      return true unless model.vars(:output_store_mode) == "on_significant"
+
+      unless output.respond_to?(:fetch)
+        logger.error("Detection of significant changes needs an output " \
+                     "capable of fetching the last configuration")
+        return true
+      end
+
+      old = model.significant_changes output.fetch(node, node.group)
+      new = model.significant_changes job.config.to_cfg
+      if old == new
+        logger.debug "No significant change on node #{node.name}"
+        false
+      else
+        true
+      end
+    end
+
     def process_success(node, job)
       @jobs_done += 1 # needed for :nodes_done hook
-      Oxidized.hooks.handle :node_success, node: node,
-                                           job:  job
+      Oxidized.hooks.node_success(node: node, job: job)
       msg = "update #{node.group}/#{node.name}"
       msg += " from #{node.from}" if node.from
       msg += " with message '#{node.msg}'" if node.msg
       output = node.output.new
-      if output.store node.name, job.config,
-                      msg: msg, email: node.email, user: node.user, group: node.group
+
+      significant_changes = significant_changes?(job, output)
+      if output.store(node.name, job.config,
+                      msg: msg, email: node.email, user: node.user,
+                      group: node.group,
+                      significant_changes: significant_changes)
         node.modified
-        Oxidized.logger.info "Configuration updated for #{node.group}/#{node.name}"
-        Oxidized.hooks.handle :post_store, node:      node,
-                                           job:       job,
-                                           commitref: output.commitref
+        logger.info "Configuration updated for #{node.group}/#{node.name}"
+        Oxidized.hooks.post_store(node: node, job: job, commitref: output.commitref)
       end
       node.reset
     end
@@ -94,26 +119,22 @@ module Oxidized
         @jobs_done += 1
         msg += ", retries exhausted, giving up"
         node.retry = 0
-        Oxidized.hooks.handle :node_fail, node: node,
-                                          job:  job
+        Oxidized.hooks.node_fail(node: node, job: job)
       end
-      Oxidized.logger.warn msg
+      logger.warn msg
     end
 
     def cycle_finished?
-      if @jobs_done > @nodes.count
-        true
-      else
-        @jobs_done.positive? && (@jobs_done % @nodes.count).zero?
-      end
+      @jobs_done > @nodes.count ||
+        (@jobs_done.positive? && (@jobs_done % @nodes.count).zero?)
     end
 
     def run_done_hook
-      Oxidized.logger.debug "lib/oxidized/worker.rb: Running :nodes_done hook"
-      Oxidized.hooks.handle :nodes_done
+      logger.debug "Running :nodes_done hook"
+      Oxidized.hooks.nodes_done
     rescue StandardError => e
       # swallow the hook erros and continue as normal
-      Oxidized.logger.error "lib/oxidized/worker.rb: #{e.message}"
+      logger.error e.message
     ensure
       @jobs_done = 0
     end

@@ -1,25 +1,20 @@
 class MLNXOS < Oxidized::Model
   using Refinements
 
-  prompt /([\w.@()-\[:\s\]]+[#>]\s)$/
+  prompt /^\r?\S* \[\S+: (master|standby)\] [#>] $/
   comment '## '
+  clean :escape_codes
 
   # Pager Handling
-  expect /.+lines\s\d+-\d+([\s]|\/\d+\s\(END\)\s).+$/ do |data, re|
+  # "Normal" pager: "lines 183-204 "
+  # Last pager:     "lines 256-269/269 (END) "
+  expect /lines \d+-\d+( |\/\d+ \(END\) )/ do |data, re|
     send ' '
     data.sub re, ''
   end
 
   cmd :all do |cfg|
-    cfg.gsub! /\[\?1h=\r/, '' # Pager Handling
-    cfg.gsub! /\[24;1H/, '' # Pager Handling
-    cfg.gsub! /\r\[K/, '' # Pager Handling
-    cfg.gsub! /\[K/, '' # Pager Handling
-    cfg.gsub! /\s/, '' # Linebreak Handling
-    cfg.gsub! /^CPU load averages:\s.+/, '' # Omit constantly changing CPU info
-    cfg.gsub! /^System memory:\s.+/, '' # Omit constantly changing memory info
-    cfg.gsub! /^Uptime:\s.+/, '' # Omit constantly changing uptime info
-    cfg.gsub! /.+Generated at\s\d+.+/, '' # Omit constantly changing generation time info
+    cfg.gsub! /.\x08/, '' # Remove Backspace char
     cfg.lines.to_a[2..-3].join
   end
 
@@ -30,21 +25,30 @@ class MLNXOS < Oxidized::Model
   end
 
   cmd 'show version' do |cfg|
-    comment cfg
+    cfg = cfg.reject_lines [
+      /^CPU load averages:\s.+/, # Omit constantly changing CPU info
+      /^System memory:\s.+/,     # Omit constantly changing memory info
+      /^Uptime:\s.+/             # Omit constantly changing uptime info
+    ]
+    comment cfg + "\n"
   end
 
   cmd 'show inventory' do |cfg|
-    comment cfg
+    comment cfg + "\n"
   end
 
   cmd 'enable'
 
   cmd 'show running-config' do |cfg|
-    cfg
+    cfg.reject_lines [
+      # Omit constantly changing generation time info
+      /.+Generated at\s\d+.+/
+    ]
   end
 
   cfg :ssh do
     password /^Password:\s*/
+    post_login 'no cli session paging enable'
     pre_logout "\nexit"
   end
 end

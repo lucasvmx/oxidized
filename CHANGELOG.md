@@ -5,36 +5,386 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+### Added
+- eatonnetwork: model unit test (@thanegill)
+- source/sql: support defining port in configuration. Closes #3853 (@ytti)
+- vsololt: new model for VSOL GPON OLT (@Vantomas)
+- tplink: add simulation data and unit tests for the TP-Link DeltaStream DS-P7001-08 GPON OLT (@Vantomas)
+- device2yaml: add `-n`/`--newline` option to set the command line terminator (e.g. `-n "\r\n"`) for devices that submit a command only on a carriage return; the terminator is recorded as a `command_newline` key in the generated YAML (@Vantomas)
+
+### Changed
+- docker: set LANG=C.UTF-8. Fixes #3690 (@ytti)
+- routeros: remove intermittent POE `voltage_on_poe-in` comment (@hendrikbl)
+- tplink: use `\r\n` as the line terminator in pre_logout, required for the model unit tests to work (@Vantomas)
+- ssh: change max_window_size from 138k to 2MB to avoid triggering Mikrotik bug. Closes #3867 (@ytti)
+- ingate: redact secrets (private keys, passwords, secrets, passphrases, pre-shared keys, tokens and the SNMP community) when remove_secret is set (@thanegill)
+
+### Fixed
+- junos: redact cleartext passwords embedded in archive-site URLs. Fixes #3640 (@KalebFenley)
+- siklu: allow parenthesis in prompt. Fixes #3841 (@ytti)
+- fortios: allow parenthesis in prompt. Fixes #3846 (@ytti)
+- os6: hide snmp-server community strings in the secret filter (@Jurgen1994)
+- fortigate: prompt can contain HA cluster status. Fixes #3846 (@robertcheramy)
+- aoscx: hide power consumption on rows where PSU output is N/A. Fixes #3864 (@FusionBrah)
+- aoscx: hide input voltage readings in "show environment power-supply input-voltage". Fixes #3864 (@FusionBrah)
+- source: return the decrypted contents of a `gpg`-encrypted source as an IO object, so JSONFile (and any source reading via `#read`) loads it instead of crashing with a `NoMethodError`. Fixes #3879 (@youdie006)
+
+## [0.37.0 - 2026-05-20]
+### Added
+- routeros: support store mode `on_significant` (@infabo)
+- model for Grandstream HT8xx (@mklopocki)
+- Add --support option to gather system diagnostics (@robertcheramy)
+
+### Changed
+- input/ssh: validate that cmd is a String. See #3700 (@robertcheramy)
+- junos: changed "show system license" regex to reduce notification noise for PTX routers. See #3794 (@ctomkow)
+- ios: keep motherboard information in show version. Closes #3798 (@robertcheramy)
+- aoscx: use oxidized filtering instead of "show system | exclude...". (@robertcheramy)
+- input/*: rewrite debug logging; remove unused logging; input/ssh: write a YAML simulation file (@robertcheramy)
+- truenas: capture app, replication, cloudsync configurations without constant changes. See #3795 (@neilschelly)
+- Set Rake::TestTask to `verbose = false` since the behavior changed with rake 13.4.2 (@robertcheramy)
+
+### Fixed
+- VyOS: detect community string in SNMP traps. Fixes: #3793 (@nicolasberens)
+- fortigate: show Part No. of SFPs. Fixes: #3800 (@robertcheramy)
+- aoscx: Hide total power consumption (stacking). Fixes #3801 (@robertcheramy)
+- linuxgeneric: fix prompt, telnet username and clean ANSI Escape Codes (@robertcheramy)
+- cumulus: fix prompt (make : and space optional). Fixes #3812 (@robertcheramy)
+- dlinknexgen: NULL byte handling. Fixes #3816 (@ziotibia81)
+- nxos: hide snmpv3 priv key when remove_secret is true. Fixes: #3805 (@robertcheramy)
+- tpink: use `\r\n` when sending commands and set `terminal length 0`. Fixes #3804 (@robertcheramy)
+
+
+## [0.36.0 - 2026-03-31]
+### Release Notes
+The fortios model has been split into fortigate and fortios. You need the new fortigate model for FortiGate firewalls. Be sure to check the [Fortinet model notes](docs/Model-Notes/Fortinet.md) before upgrading.
+
+The SCP gem is now an optional dependency as it will rarely be used - you must install it if you need it. It is still included in the docker image.
+
+We may rework models in the future to clean up duplicated code (by using the macros or by inheriting from the Defacto model). To make sure your favorite model doesn’t break, please share [simulation files](/docs/DeviceSimulation.md) via issues or, preferably, pull requests, so we can detect when a change breaks a model.
 
 ### Added
+- Support https mode, headers, and ssl verify for HTTP output (@bahirul)
+- String refinements: introduce `keep_lines` and `reject_lines` methods (@robertcheramy)
+- Support for storing configurations only on significant changes (@robertcheramy)
+- Add support for Ivanti Secure Connect ISA models (@candleflip)
+- smartbyte: new model for SmartByte switches (@freddy36)
+- Support multiple input (@robertcheramy)
+- apcaos model with SSH + SCP capabilities, deprecates apc_aos (@robertcheramy)
+- exalink model for specific Cisco ExaLink Fusion (formerly Exablaze) switches (@obol89)
+- source_node_transform hook, allows user to manipulate node data when loading from source (@ytti)
+- docker image: publish major version tag (e.g. `0`) in addition to full semver tag on releases (@infabo)
+- introduce the defacto model and macros for models (@ytti)
+
+### Changed
+- Refactored models: Use `keep_lines` and `reject_lines` in aosw, arubainstant, asa, efos, firelinuxos, fsos, ironware, mlnxos and perle (@robertcheramy)
+- Refactor SSH and SCP into a common class SSHBase. Fixes #3597 (@robertcheramy)
+- Modified models to support store mode on significant changes: ios, fortios, perle, ndms (@robertcheramy, @furriest)
+- fortios: model rewrite and split into fortios and fortigate. Fixes #3680 (@robertcheramy)
+- fortigate: Add PSU & SFP inventory (@robertcheramy)
+- fortigate: move var fortios_autoupdate (deprecated) to fortigate_autoupdate (@robertcheramy)
+- netgear: extended login and pager detection to add support for GS728TPv2 and GS752TPv2 (@weberc)
+- comware: Hide snmp secrets for Comware (@iriseden)
+- Aruba-CX : Hide secrets for Aruba-CX (@iriseden)
+
+### Fixed
+- VyOS: Only remove SNMP community, not route-maps. Fixes #3735 (@systeembeheerder)
+- apc_aos: set comment to "; " to match comments in config.ini (@robertcheramy)
+- h3c: fix overly permissive prompt regexp causing false matches. Fixes #3673 (@robertcheramy)
+- extra/device2yaml.rb: fix \r being removed at end of line (@robertcheramy)
+- perle: remove trailing \r (the device sends \r\r\n) (@robertcheramy)
+- Reintroduce support for Ruby 3.0. Fixes #3688 (@robertcheramy)
+- githubrepo: fix authentication with ssh-agent not working. Fixes #3420 (@robertcheramy)
+- fastiron: adjust prompt to account for stacks, remove time from stack output. Fixes #3106 (@ManoftheSea)
+- interval: fix fetching device configuration at oxidized start when interval is 0. Fixes #3746 (@tgr229)
+- voss: more cleanup of constantly changing values (fan & temp) for at least Extreme Networks 7520-48Y-8C-FabricEngine (8.10.5.0) (@irrwitzer42)
+- truenas: Added retry logic to use sudo for reading/dumping the configuration database if needed. Fixes #3767 (@neilschelly)
+- aoscx: update regex to include 'N/A' in FAN speed parsing (@solrac200, @robertcheramy)
+- nxos: show inventory for older models. Fixes #3779 (@scamp)
+
+## [0.35.0 - 2025-12-04]
+### Release Notes
+- VyOS now has it's own model and should be used for supported VyOS versions instead of the Vyatta model.
+- AosCX has been reworked and may break old OS versions. Submit an issue along with a YAML Simulation File if you encounter problems.
+- TiMOS (deprecated model) has been removed. Use SROS.
+- FortiOs will be reworked in release 0.36 (Issue #3680). Subscribe to the issue if you want to be informed and test the model before the release.
+- ~~Support for Ruby 3.1 will be discontinued in release 0.36 (Issue #3688) if no one objects.~~
+
+### Added
+- Allow setting timeout on per node basis. Closes #3612 (@ytti)
+- Added Vyos as individual model. Closes #3603 #3560 (@nicolasberens)
+- Add metadata to models. Closes #3249 (@robertcheramy)
+- perle: new model for console servers (@robertcheramy)
+- Introduce [conditional commands](/docs/Ruby-API.md#conditional-commands) (@robertcheramy)
+
+### Changed
+- tnsr: added simulation data for older versions (@Vantomas)
+- docker image: change default shell to bash. (@electrocret)
+- refactor suppression of ANSI escape codes into model.rb (use `clean :escape_codes` in your model. Updated cumulus, garderos, mlnxos and vyos. (@robertcheramy)
+- aoscx: rework handling of ANSI escape codes (@robertcheramy)
+- docker: build on arm64 natively. Closes #3665 (@robertcheramy)
+- docker image: move base image from phusion/baseimage to debian:trixie-slim (@robertcheramy)
+
+### Fixed
+- input/http: bracket IPv6 URI. Fixes #3620 (@ytti)
+- tnsr: fixed prompt regex, sometimes --More-- pager is misplaced on older versions (@ClumsyAdmin)
+- eatonnetwork: Update for firmware v2.2.0 #3634 (@thanegill)
+- input/http: Corrected pagination causing duplicated nodes. Fixes #3676 (@kquilliam)
+- many models: fix redundant regular expressions (@robertcheramy)
+- timos: remove deprecated model timos. Use sros. #3617 (@robertcheramy)
+- fsos: set terminal width to 0. Fixes #3576 (@robertcheramy)
+- aoscx: rework environmental data anonymization. Fixes #3568 (@robertcheramy, inspired by PR #3653 by @martadams89)
+- netgear: fix prompt issues caused by ANSI escape codes. Fixes #3287 (@robertcheramy)
+- remove redundant dependency on bundler producing a CI failure on ruby-head (@robertcheramy)
+- nxos: use "show inventory" when "show inventory all" is not supported. Fixes #3657 (@robertcheramy)
+- arubainstant: handle spaces/parentheses in AP names and add Zone column. Fixes #3611 (@iRomanyshyn, @robertcheramy)
+- core: fix "undefined method `[]' for nil" when only extensions: configured. Fixes: #3607 (@robertcheramy)
+
+
+## [0.34.3 - 2025-08-05]
+This release fixes an issue preventing /node/show/<hostname> to work in oxidized-web.
+
+### Fixed
+- Guarantee that node vars is a dict (Issue ytti/oxidized-web#365) (@ytti)
+
+## [0.34.2 – 2025-08-01]
+This release mainly fixes a bug in input/scp that made ssh raise an error when
+closing a closed connection (Issue #3583).
+
+A fix for config vars (Issue #3536) changes the way oxidized stores its
+vars internally (symblos => strings). Libraries depending on oxidized internal
+structures may have problem with this. oxidized-web was fixed in Release 0.17.1.
+
+### Added
+- Absolute time limit for a fetch job (default: 300 seconds) (@robertcheramy)
+
+### Changed
+- slackdiff: Attempt to join the channel if Errors::NotInChannel is encountered (@varesa)
+
+### Fixed
+- SSH raises error when closing a closed connection. Fixes #3583 (@ytti)
+- Config vars will not fall back to less specific. Fixes #3536 (@ytti)
+- input/scp: make common errors produce a warning, not a crashfile (@robertcheramy)
+- input/scp: implement timeouts. Fixes #3590 (@robertcheramy, @ytti)
+- model/mtrlrfs: add missing prompt (@R3thos)
+- slackdiff: Respect the HTTP proxy configuration while uploading the file. Fixes #3534 (@varesa)
+- logging (syslog): do not write two timestamps (Fixed in semanticlogger) (@robertcheramy)
+
+
+## [0.34.1 - 2025-07-18]
+This release contains small fixes and will include the new version of oxidized-web (0.17.0) in the docker container.
+
+### Changed
+- github: run ruby CI against ruby-head (@robertcheramy)
+
+### Fixed
+- input/ssh: hide Net::SSH errors and only display fatal logs unless input.debug = true. Fixes: #3574 (@robertcheramy)
+- junos: fix unfrozen literal strings (@robertcheramy)
+- spec/model: fix unfrozen literal strings and set a default prompt (@robertcheramy)
+
+
+## [0.34.0 - 2025-07-15]
+:warning: This release introduces a [new logging system](docs/Configuration.md#logging),
+based on [semantic logger](https://logger.rocketjob.io/). The old configuration
+(`log`, `syslog`) is still supported but obsolete and will be removed in a
+future release, so be sure to migrate your configuration.
+
+### Added
+- add iosxr support to SyslogMonitor (@deesel)
+- add junos: support show chassis cluster when SRX series (@shigechika)
+- add nxos: support for complete hardware inventory (@garryshtern)
+- ssh: support 'newline "string"' cfg block method to allow defining \r\n newline (@ytti)
+- model for Netgate TNSR (@Vantomas)
+- efos: New model for Brocade Enhanced Fabric OS. Fixes #3477 (@sorano, @cetjcm, @robertcheramy)
+- output/file, output/git: clean node configurations which are not listed in the
+  source anymore. Fixes: #1805 (@robertcheramy)
+- sixwind: New model to support 6WIND Virtual Service Router (@hcaldicott)
+- model for saos10 (@penfold1972)
+
+### Changed
+- remove uri in commit-archive location for EdgeOS. Fixed #3525 (@systeembeheerder)
+- acos: remove free storage amount from show version. Fixes #3492 (@991jo)
+- Housekeeping in the code: Maximal line length: 120 char + Rubocop fixes (@robertcheramy)
+- spec/model/data uses # instead of : as a separator in the filename, so we can
+  git clone under Windows. Fixes: #3481 (@robertcheramy)
+- logging: rework of the logging system, using Semantic Logger (@robertcheramy)
+
+### Fixed
+- nxos: ignore bootflash size and permission errors (@rouven0)
+- githubrepo: explicitly tell when Rugged isn't installed with ssh support (@robertcheramy)
+- ironware: mask temperatures with more than two digits (@merelissdgr)
+- add content-type header for PUT request in rest client (@deesel)
+- docker: do not remove git. Fixes #3482 (@robertcheramy)
+- awplus: fix skip password when enable=true (@shigechika)
+- aosw: fix secret parsing (@rouven0)
+- mlnxos: handle ANSI-ESC codes and pager requests. The prompt has been
+  reengineered, open an issue if you experience timeouts. Fixes #3469 (@robertcheramy)
+- Update installation instructions on Rocky Linux 9. Fixes #3368 (@robertcheramy)
+- awplus: fix enable password when supplied (@sgsimpson)
+- Fix CodeQL scanning alerts on regular expressions (Issue #3513) in node.rb (alert 40),
+  asa (alerts 5 and 6), sonicos (4, 11), quantaos (9, 10), eltex (7), zynos (18, 19),
+  AricentISS (15) and aosw (36)
+- fabricos: remove power supply input voltage from `chassisShow` output (@hops)
+- netgear: include running-config in config output (@bradleywehmeier)
+- tmos: remove deprecated secrets (@rouven0)
+- log an error when no suitable input is found for a node. Fixes: #3346 (@robertcheramy)
+- firelinuxos: fix timeout on syntax error. Fixes #3393, #3502 (@robertcheramy)
+
+
+## [0.33.0 - 2025-03-26]
+This release changes the way to configure oxidized-web. The old `rest`
+configuration is still supported but deprecated. The new configuration works
+with oxidized-web 0.16.0 or later.
+See [docs/Configuration.md](/docs/Configuration.md#oxidized-web-RESTful-API-and-web-interface).
+
+The docker container includes
+[security fixes to ruby-rake](https://ubuntu.com/security/notices/USN-7366-1),
+so be sure to update to the latest version.
+
+### Added
+- unifiap: new model for Unifi APs, switches, and AirOS APs (@clifcox)
+- github: Issue templates for bugs, feature requests and support requests (@robertcheramy)
+- model for Ingate Operating System (@thanegill)
+- model for Easton Gigabit Network Card (@thanegill)
+
+### Changed
+- fortios: support for FortiADC (@electrocret)
+- output/git: cache commit log to improve performance of oxidized-web. Fixes #3121 (@robertcheramy)
+- input/http: digest auth handles special characters in passwords by itself (no need to url encode them manually) (@einglasvollkakao)
+- changed the configuration for oxidized-web from rest: to extensions.oxidized-web (@robertcheramy)
+- netgear: add pager-handler workaround, fixes: #2394 and #3341 (@candlerb, @syn-bit)
+- Output#version (git/gitcrypt) returns a Time object in its hash for more flexibility in oxidized-web (@robertcheramy)
+- ios: hide secret key of aaa radius (@martinberg, @robertcheramy)
+- container: update to phusion/baseimage:noble-1.0.1 (@robertcheramy)
+
+### Fixed
+- powerconnect: Mask the changing temperature issue for non-stacked switches. Fixes #2088 (@clifcox)
+- Fix frozen string literals (@robertcheramy)
+- powerconnect: Cleanup login/logout logic. Fixes #3437 (@clifcox)
+- aos7: remove extra lines occuring when `show hardware-info` runs slow (@rouven0)
+- srosmd: add ignore regex for 64-bit system uptime (@emiliaaah)
+- removed some rubocop warnings (@robertcheramy)
+
+
+## [0.32.2 – 2025-02-27]
+This patch release mainly fixes the docker building process, wich resulted in
+0.32.1 not beeing built.
+
+### Changed
+- docker image: updated github CI to explicitly build tag versions (@robertcheramy)
+- docker image: update rake build_container to match the tags of GitHub CI (@robertcheramy)
+
+### Fixed
+- powerconnect: restore last line of command output, and remove spurious CR characters. Fixes #2692 (@clifcox)
+- powerconnect: Remove undesirable inserted blank lines during pagination. Fixes #3413 (@clifcox)
+- docker image: remove ubuntu user introduced in noble. Fixes #3336 (@robertcheramy)
+- docker image: correct rights under /home/oxidized. Fixes #3336 (@robertcheramy)
+- docker image: revert the use of GEM_HOME. Fixes #3331 (@robertcheramy)
+- docker image: improve the documentation. Fixes #3336 (@robertcheramy)
+- docker image: remove examples/podman-compose as this is better documented in docs/Docker.md (@robertcheramy)
+
+
+## [0.32.1 – 2025-02-20]
+This patch release fixes a javascript issue in oxidized-web, which is included
+in the Docker container of oxidized.
+
+### Fixed
+- powerconnect: Hide enable, and line secrets. Further Fixes #1212 (#clifcox)
+
+
+## [0.32.0 – 2025-02-17]
+This release fixes a security issue in oxidized-web, which is included in the
+Docker container of oxidized. If you are not using the Docker container but
+use oxidized-web, be sure to update your oxidized-web gem to 0.15.0.
+
+### Added
+- junos: add unit test (@systeembeheerder)
+- apc_aos: support for scp (@robertcheramy)
+- config: allow model_map and group_map keys to be regexp. Fixes #3360 (@ytti)
+- enterprise_sonic: add new model enterprise_sonic (@ohai89)
+- model for Kornfeld Operating System (@yurenkov)
+
+### Changed
+- sonicos: accept policy message. Fixes #3339 (@Steve-M-C, @robertcheramy)
+- input/ssh: change input.debug to dump all characters and include sent commands. (@robertcheramy)
+- cumulus: remove ANSI Escape codes and fix prompt issues. The prompt is more specific now (@alchemyx, @robertcheramy)
+- model unit tests: the tests are automated and simpler to use (@ytti, @robertcheramy)
+- device2yaml.rb: moved to extra/, commands can be specified from the command line or from a file (no cmdsets provided anymore) (@robertcheramy)
+- extra/gitdiff-msteams.sh: honor the 28KB size limit and add an optional link to GitHub (@mopi3456)
+
+### Fixed
+- tplink: send 'enable' before the enable password. Fixes #3271 (@robertcheramy)
+- asyncos: fix prompt for hostnames containing "-" . Fixes #3327 (@robertcheramy)
+- sonicos: fix prompt for hostnames containing "-" . Fixes #3333 (@robertcheramy)
+- xos: Hide radius accounting secret
+- fsos: Hide AAA and SNMP secrets (@RayaneB35)
+- aos7: fix prompt for version 8.8x. Fixes #3351 (@robertcheramy)
+- aosw: Hide power measurements (@rouven0)
+- arubainstant: show version prepends a space to prompt when a core file is present. Fixes #3398 (@robertcheramy)
+
+
+## [0.31.0 – 2024-11-29]
+
+### Added
+- model for Riverbed Steelhead (@Swaeltjie)
+- model for uplink EP4440-DP OLT (@AAm-kun)
 - model for Siklu Multihaul TG radios (@bdg-robert)
-- fortios: variable `fullconfig` to get the configuration with default values. Fixes: #3159 (@robertcheramy)
 - model for VMWare NSX DFW (@elmobp)
 - model for F5OS (@teunvink)
+- cumulus: Add possibility to use NVUE (@lagertonne)
+- model for garderos (@robertcheramy)
+- unit tests framework for models with ssh input (@robertcheramy)
+- os6: Added support to Dell EMC Networking OS6 (@anubisg1)
+- model for HPE Aruba Networking Instant Mode (Aruba Instant). Fixes #3057 (@robertcheramy)
+- Add JSONFILE source (@sargon)
 
 ### Changed
 - h3c: change prompt to expect either angle (user-view) or square (system-view) brackets (@nl987)
 - xos: Hide radius and user secrets for XOS (@iriseden)
 - eos: Hide radius and snmp secrets for Arista EOS (@iriseden)
-- docker/podman: baseimage updated to phusion/baseimage:jammy-1.0.4
 - fortios: Hide date in acme certifcate comments (@systeembeheerder)
 - dlink: added support for 'enable admin' before getting configuration, if enable=true (@as8net)
 - dlinknextgen: strip uptime and ntp update time from config
 - Updated slackdiff.rb to use slack_ruby_client instead of slack-api (@Punicaa)
 - oxidized: options (such as credentials, etc.) now use the same resolution logic as variables and can also be defined per model in a group (@EinGlasVollKakao)
-- Add JSONFILE source (@sargon)
 - saos: add inventory and software status collection (@grbeneke)
+- container-image: update to phusion/baseimage:noble-1.0.0 and include security upgrades at build time (@robertcheramy)
+- container-image: use ubuntu-packages instead of gems in order to reduce container image size (@robertcheramy)
+- edgecos.rb: hide temperature and fan speed (@dhooper6430)
+- cnos: show information before config, remove secrets only when told to do so (@robje)
+- Updated slackdiff.rb to use new files.getUploadURLExternal slack file upload API instead of deprecated files.upload (@varesa)
+- Updated source/output files to reference a Source/Output module to avoid namespace duplication (@laf, @robertcheramy)
+- ios: Hide WLAN PSK, AP profile dot1x password, AP profile mgmtuser password/secret and radius COA server-key (@devon-mar)
+- ios: remove values from custom SNMP OID's, set by an EEM script (@syn-bit)
+- Update net-ssh to 7.3 to enable support for aes(128|256)gcm. Fixes #3168 (@jacobw)
+- removed time command from uplink EP4440-DP OLT model
+- fortios: variable `fullconfig` to get the configuration with default values. Fixes: #3159 (@robertcheramy)
+- container-image: install x25519 gem package to support more ssh kex. Fixes #3070 (@benasse)
+- lenovonos: Salt administrator-password line when remove_unstable_lines is set to True (@kani999)
+- lenovonos: Removes lines that started with Fan because RPM always changes. (@kani999)
 
 ### Fixed
+- fixed error for ibos when remove_secret is set (@dminuoso)
+- fixed prompt for Watchguard FirewareOS not matching the regex when the node is managed and master (@benasse)
 - fixed prompt for vyos/vyatta to allow logins with non-priviliged accounts. Fixes #3111 (@h-lopez)
 - fixed power consumption included in ArubaOS-CX diffs starting with FL.10.13.xxx. Fixes #3142 (@terratalpi)
 - fixed oxidized-web getting "version not found" when fetching a version from git and no group is defined. Fixes #2222 (@robertcheramy)
 - fixed telnet to disconnect gracefully even if it throws IOError while disconnect. Fixes #3212 (@ytti)
-- docs: run Git garbage collection to address performance issues. Fixes #3121 (@robertcheramy)
+- docs: run git garbage collection to address performance issues. Fixes #3121 (@robertcheramy)
 - saos: fixed handling of 'unsaved configuration' indicator in prompt (@grbeneke)
 - rgos: also strip "System uptime" for installed modules (@spike77453)
 - fixed digest authentication when using http input (@spike77453)
 - fixed aosw prompt; now working with ArubaOS 8 (@mabezi, @robertcheramy)
+- routeros: fix system info for CHR. Fixes #3180 (@systeembeheerder)
+- removed hardcoded '~/.config/oxidized/config'. Fixes #3229 (@robertcheramy)
+- linuxgeneric: updated prompt to support '$' at the end (@robertcheramy)
+- hook githubrepo: add a specific warning when rugged not installed with ssh support. Fixes #3211 (@robertcheramy)
+- hook githubrepo: works with custom branch names (@robertcheramy)
+- ios: removes secrets when config has multiple snmp-server host lines. Fixes #3239 (@robertcheramy)
+- ios: fixed device specs on ASR900 Series. Fixes #3297 (@robertcheramy, @roshnaraman)
+- netgear: prompt for gs752tpp. Fixes #3287 (@robertcheramy)
+- aoscx: fixed regex for 6400 switches to hide temperature and power (@steveneppler)
+
 
 ## [0.30.1 – 2024-04-12]
 

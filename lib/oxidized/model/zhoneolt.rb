@@ -5,7 +5,7 @@ class ZhoneOLT < Oxidized::Model
 
   # the prompt can be anything on zhone, but it defaults to 'zXX>' and we
   # always use hostname>
-  prompt /^(\r*[\w.@():-]+[>]\s?)$/
+  prompt /^(\r*[\w.@():-]+>\s?)$/
   comment '# '
 
   cmd :secret do |cfg|
@@ -36,7 +36,9 @@ class ZhoneOLT < Oxidized::Model
   end
 
   cmd 'ethrpshow' do |cfg|
-    cfg = cfg.each_line.select { |line| line.match /Vendor (Name|OUI|Part|Revision)|Serial Number|Manufacturing Date/ }.join
+    cfg = cfg.each_line.select do |line|
+      line.match /Vendor (Name|OUI|Part|Revision)|Serial Number|Manufacturing Date/
+    end.join
     comment cfg
   end
 

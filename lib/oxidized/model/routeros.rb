@@ -11,11 +11,11 @@ class RouterOS < Oxidized::Model
       cfg.gsub! /^\r+(.+)/, '\1'
       cfg.gsub! /([^\r]*)\r+$/, '\1'
     end
-    cfg
+    cfg.lines.map { |line| line.rstrip }.join("\n") + "\n" # strip trailing whitespace
   end
 
-  cmd '/system routerboard print' do |cfg|
-    cfg = cfg.each_line.grep(/(model|firmware-type|current-firmware|serial-number):/).join
+  cmd '/system resource print' do |cfg|
+    cfg = cfg.each_line.grep(/(version|factory-software|total-memory|cpu|cpu-count|total-hdd-space|architecture-name|board-name|platform):/).join
     comment cfg
   end
 
@@ -29,8 +29,12 @@ class RouterOS < Oxidized::Model
     comment cfg
   end
 
+  cmd :significant_changes do |cfg|
+    cfg.gsub(/^(#\s+installed-version: [^\n]+\n).*?^(?=# software id)/m, '\1')
+  end
+
   post do
-    Oxidized.logger.debug "lib/oxidized/model/routeros.rb: running /export for routeros version #{@ros_version}"
+    logger.debug "Running /export for routeros version #{@ros_version}"
     run_cmd = if vars(:remove_secret)
                 '/export hide-sensitive'
               elsif (not @ros_version.nil?) && (@ros_version >= 7)
@@ -43,8 +47,10 @@ class RouterOS < Oxidized::Model
       cfg.gsub! "# inactive time\r\n", '' # Remove time based system comment
       cfg.gsub! /# received packet from \S+ bad format\r\n/, '' # Remove intermittent VRRP/CARP collision comment
       cfg.gsub! "# poe-out status: short_circuit\r\n", '' # Remove intermittent POE short_circuit comment
+      cfg.gsub! /# poe-out status: voltage_on_poe-in\r?\n/, '' # Remove intermittent POE voltage_on_poe-in comment
       cfg.gsub! "# Firmware upgraded successfully, please reboot for changes to take effect!\r\n", '' # Remove transient firmware upgrade comment
       cfg.gsub! /# \S+ not ready\r\n/, '' # Remove intermittent $interface not ready comment
+      cfg.gsub! /# .+ please restart the device in order to apply the new setting\r\n/, '' # Remove intermittent restart needed comment. (e.g. for ipv6 settings)
       cfg = cfg.split("\n")
       cfg.reject! { |line| line[/^#\s\w{3}\/\d{2}\/\d{4}.*$/] } # Remove date time and 'by RouterOS' comment (v6)
       cfg.reject! { |line| line[/^#\s\d{4}-\d{2}-\d{2}.*$/] }   # Remove date time and 'by RouterOS' comment (v7)

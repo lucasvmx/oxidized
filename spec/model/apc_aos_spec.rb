@@ -3,8 +3,6 @@ require_relative '../spec_helper'
 describe 'Model apc_aos' do
   before(:each) do
     Oxidized.asetus = Asetus.new
-    Oxidized.asetus.cfg.debug = false
-    Oxidized.setup_logger
 
     Oxidized::Node.any_instance.stubs(:resolve_repo)
     Oxidized::Node.any_instance.stubs(:resolve_output)
@@ -26,6 +24,8 @@ describe 'Model apc_aos' do
     # Make sure we only run "config.ini" an no other command
     Oxidized::FTP.any_instance.expects(:cmd).never
     Oxidized::FTP.any_instance.expects(:cmd).with("config.ini").returns(CONFIGURATION_FILE)
+    Apc_aos.logger.expects(:warn)
+           .with("Apc_aos is deprecated, use ApcAos instead.")
 
     status, result = @node.run
 
@@ -34,7 +34,6 @@ describe 'Model apc_aos' do
   end
 
   it "fetches the configuration with scp" do
-    skip "Work in Progress, see issue #1802"
     @node = Oxidized::Node.new(name:     'example.com',
                                input:    'scp',
                                output:   'file',
@@ -50,6 +49,8 @@ describe 'Model apc_aos' do
     # Make sure we only run "config.ini" an no other command
     Oxidized::SCP.any_instance.expects(:cmd).never
     Oxidized::SCP.any_instance.expects(:cmd).with("config.ini").returns(CONFIGURATION_FILE)
+    Apc_aos.logger.expects(:warn)
+           .with("Apc_aos is deprecated, use ApcAos instead.")
 
     status, result = @node.run
 
@@ -65,6 +66,8 @@ describe 'Model apc_aos' do
                                username: 'alma',
                                password: 'armud',
                                prompt:   'test_prompt')
+    Apc_aos.logger.expects(:error)
+           .with("Needs one of [:ftp, :scp] to be configured")
 
     status, = @node.run
 
@@ -74,7 +77,7 @@ end
 
 # Not taking the whole configuration.
 # For now, the model does only mask the generation date
-# In the future, it may hide passwords, so I included a line with snmp comunity strings
+# In the future, it may hide passwords, so I included a line with snmp community strings
 CONFIGURATION_FILE = <<~HEREDOC.freeze
   ; Schneider Electric
   ; Network Management Card AOS v2.5.0.8

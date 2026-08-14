@@ -3,7 +3,7 @@ class Eltex < Oxidized::Model
 
   # Tested with MES2324FB Version: 4.0.7.1 Build: 37 (master)
 
-  prompt /^\s?[\w.@\(\)-]+[#>]\s?$/
+  prompt /^\s?[\w.@()-]+[#>]\s?$/
   comment '! '
 
   cmd :all do |cfg|
@@ -16,7 +16,7 @@ class Eltex < Oxidized::Model
     cfg.gsub! /^(enable (password|secret)( level \d+)? \d) .+/, '\\1 <secret hidden>'
     cfg.gsub! /^(\s+(?:password|secret)) (?:\d )?\S+/, '\\1 <secret hidden>'
     cfg.gsub! /^(tacacs-server (.+ )?key) .+/, '\\1 <secret hidden>'
-    cfg.gsub! /^((tacacs|radius) server [^\n]+\n(\s+[^\n]+\n)*\s+key) [^\n]+$/m, '\1 <secret hidden>'
+    cfg.gsub! /^((tacacs|radius) server [^\n]+\n( +[^\n]+\n)*\s+key) [^\n]+$/m, '\1 <secret hidden>'
     cfg.gsub! /username (\S+) privilege (\d+) (\S+).*/, '<secret hidden>'
     cfg.gsub! /^username \S+ password \d \S+/, '<secret hidden>'
     cfg.gsub! /^enable password \d \S+/, '<secret hidden>'

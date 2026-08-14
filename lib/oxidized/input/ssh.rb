@@ -1,29 +1,30 @@
+require 'timeout'
+require_relative 'sshbase'
+require_relative 'debugyaml'
+require_relative 'debugtext'
+
 module Oxidized
-  require 'net/ssh'
-  require 'net/ssh/proxy/command'
-  require 'timeout'
-  require 'oxidized/input/cli'
-  class SSH < Input
-    RESCUE_FAIL = {
-      debug: [
-        Net::SSH::Disconnect
-      ],
-      warn:  [
-        RuntimeError,
-        Net::SSH::AuthenticationFailed
-      ]
-    }.freeze
-    include Input::CLI
+  class SSH < SSHBase
     class NoShell < OxidizedError; end
 
-    def connect(node)
+    RESCUE_FAIL = {
+      RuntimeError => :warn
+    }.freeze
+
+    def self.rescue_fail
+      super.merge(RESCUE_FAIL)
+    end
+
+    def connect(node) # rubocop:disable Naming/PredicateMethod
       @node        = node
-      @output      = ''
+      @output      = String.new('')
       @pty_options = { term: "vt100" }
       @node.model.cfg['ssh'].each { |cb| instance_exec(&cb) }
-      @log = File.open(Oxidized::Config::LOG + "/#{@node.ip}-ssh", 'w') if Oxidized.config.input.debug?
 
-      Oxidized.logger.debug "lib/oxidized/input/ssh.rb: Connecting to #{@node.name}"
+      @yaml_debug = DebugYAML.new(Oxidized.config.input.debug, @node, config_name)
+      @text_debug = DebugText.new(Oxidized.config.input.debug, @node, config_name)
+
+      logger.debug "Connecting to #{@node.name}"
       @ssh = Net::SSH.start(@node.ip, @node.auth[:username], make_ssh_opts)
       unless @exec
         shell_open @ssh
@@ -36,22 +37,31 @@ module Oxidized
       connected?
     end
 
-    def connected?
-      @ssh && (not @ssh.closed?)
-    end
-
     def cmd(cmd, expect = node.prompt)
-      Oxidized.logger.debug "lib/oxidized/input/ssh.rb #{cmd} @ #{node.name} with expect: #{expect.inspect}"
+      unless cmd.is_a?(String)
+        logger.error "cmd must be a String (#{cmd.class}): #{cmd.inspect} @ #{node.name}"
+        raise ArgumentError, "cmd must be a String"
+      end
+      logger.debug "Sending '#{cmd.dump}' @ #{node.name} with expect: #{expect.inspect}"
       cmd_output = if @exec
+                     @yaml_debug&.send_data(cmd)
+                     @text_debug&.send_data(cmd)
                      @ssh.exec! cmd
                    else
                      cmd_shell(cmd, expect).gsub("\r\n", "\n")
                    end
+
+      # only logging @exec as cmd_shell is handled in the ssh loop
+      @yaml_debug&.receive_data(cmd_output) if @exec
+      @text_debug&.receive_data(cmd_output) if @exec
+
       # Make sure we return a String
       cmd_output.to_s
     end
 
     def send(data)
+      @yaml_debug&.send_data(data)
+      @text_debug&.send_data(data)
       @ses.send_data data
     end
 
@@ -63,24 +73,27 @@ module Oxidized
 
     private
 
+    # We need a specific disconnect for SSH in shell mode, see issue #3725
     def disconnect
       disconnect_cli
       # if disconnect does not disconnect us, give up after timeout
-      Timeout.timeout(Oxidized.config.timeout) { @ssh.loop }
-    rescue Errno::ECONNRESET, Net::SSH::Disconnect, IOError
-      # These exceptions are intented and therefore not handled here
+      Timeout.timeout(@node.timeout) { @ssh.loop }
+    rescue Errno::ECONNRESET, Net::SSH::Disconnect, IOError => e
+      logger.debug 'The other side closed the connection while ' \
+                   "disconnecting, raising #{e.class} with #{e.message}"
+    rescue Timeout::Error
+      logger.debug "#{@node.name} timed out while disconnecting"
     ensure
-      @log.close if Oxidized.config.input.debug?
-      (@ssh.close rescue true) unless @ssh.closed?
+      @yaml_debug&.close
+      @text_debug&.close
+      (@ssh.close rescue true) unless @ssh.closed? # rubocop:disable Style/RedundantParentheses
     end
 
     def shell_open(ssh)
       @ses = ssh.open_channel do |ch|
         ch.on_data do |_ch, data|
-          if Oxidized.config.input.debug?
-            @log.print data
-            @log.flush
-          end
+          @yaml_debug&.receive_data(data)
+          @text_debug&.receive_data(data)
           @output << data
           @output = @node.model.expects @output
         end
@@ -101,8 +114,11 @@ module Oxidized
     end
 
     def cmd_shell(cmd, expect_re)
-      @output = ''
-      @ses.send_data cmd + "\n"
+      @output = String.new('')
+
+      @yaml_debug&.send_data(cmd + newline)
+      @text_debug&.send_data(cmd + newline)
+      @ses.send_data cmd + newline
       @ses.process
       expect expect_re if expect_re
       @output
@@ -110,8 +126,8 @@ module Oxidized
 
     def expect(*regexps)
       regexps = [regexps].flatten
-      Oxidized.logger.debug "lib/oxidized/input/ssh.rb: expecting #{regexps.inspect} at #{node.name}"
-      Timeout.timeout(Oxidized.config.timeout) do
+      logger.debug "Expecting #{regexps.inspect} at #{node.name}"
+      Timeout.timeout(@node.timeout) do
         @ssh.loop(0.1) do
           sleep 0.1
           match = regexps.find { |regexp| @output.match regexp }
@@ -120,49 +136,6 @@ module Oxidized
           true
         end
       end
-    end
-
-    def make_ssh_opts
-      secure = Oxidized.config.input.ssh.secure?
-      ssh_opts = {
-        number_of_password_prompts:      0,
-        keepalive:                       vars(:ssh_no_keepalive) ? false : true,
-        verify_host_key:                 secure ? :always : :never,
-        append_all_supported_algorithms: true,
-        password:                        @node.auth[:password],
-        timeout:                         Oxidized.config.timeout,
-        port:                            (vars(:ssh_port) || 22).to_i,
-        forward_agent:                   false
-      }
-
-      auth_methods = vars(:auth_methods) || %w[none publickey password]
-      ssh_opts[:auth_methods] = auth_methods
-      Oxidized.logger.debug "AUTH METHODS::#{auth_methods}"
-
-      ssh_opts[:proxy] = make_ssh_proxy_command(vars(:ssh_proxy), vars(:ssh_proxy_port), secure) if vars(:ssh_proxy)
-
-      ssh_opts[:keys]       = [vars(:ssh_keys)].flatten           if vars(:ssh_keys)
-      ssh_opts[:kex]        = vars(:ssh_kex).split(/,\s*/)        if vars(:ssh_kex)
-      ssh_opts[:encryption] = vars(:ssh_encryption).split(/,\s*/) if vars(:ssh_encryption)
-      ssh_opts[:host_key]   = vars(:ssh_host_key).split(/,\s*/)   if vars(:ssh_host_key)
-      ssh_opts[:hmac]       = vars(:ssh_hmac).split(/,\s*/)       if vars(:ssh_hmac)
-
-      if Oxidized.config.input.debug?
-        ssh_opts[:logger]  = Oxidized.logger
-        ssh_opts[:verbose] = Logger::DEBUG
-      end
-
-      ssh_opts
-    end
-
-    def make_ssh_proxy_command(proxy_host, proxy_port, secure)
-      return nil unless !proxy_host.nil? && !proxy_host.empty?
-
-      proxy_command =  "ssh "
-      proxy_command += "-o StrictHostKeyChecking=no " unless secure
-      proxy_command += "-p #{proxy_port} "            if proxy_port
-      proxy_command += "#{proxy_host} -W [%h]:%p"
-      Net::SSH::Proxy::Command.new(proxy_command)
     end
   end
 end

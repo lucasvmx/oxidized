@@ -10,9 +10,48 @@ output:
     directory: /var/lib/oxidized/configs
 ```
 
+### Groups
+If you use groups, the nodes will be stored in directories named after the
+groups. The directories are stored one level above the directory for configurations
+without groups.
+
+Example:
+```
+/var/lib/oxidized/
++ configs/     # Configurations of groupless nodes
++ group1/      # Configurations of nodes in group1
++ group2/      # Configurations of nodes in group2
+```
+
+### Clean obsolete nodes
+The `file` output can automatically remove the configuration of nodes no
+longer present in the [source](Sources.md).
+
+> :warning: **Warning:** this might be a dangerous operation: oxidized
+> will remove **any** file not matching the hostname of the nodes configured
+> in the source.
+
+When using groups, it will remove any files not matching the hostnames of the
+nodes from the groups directories (which are on the same level as the default
+directory). As a safety measure, oxidized will only clean configuration out of
+active groups. If the group `example` isn't used anymore, oxidized won't clean
+the configurations out of the directory `../example/`.
+
+Configuration:
+
+```yaml
+output:
+  default: file
+  clean_obsolete_nodes: true
+  file:
+    directory: "~/.config/oxidized/configs/default"
+```
+
+
 ## Output: Git
 
-This uses the rugged/libgit2 interface. So you should remember that normal Git hooks will not be executed.
+This uses the rugged/libgit2 interface. So you should remember that normal Git
+hooks will not be executed.
 
 For a single repository containing all devices:
 
@@ -63,7 +102,49 @@ output:
 
 ```
 
-Over time, your Git repository will expand, potentially leading to performance issues. For instructions on how to address this, see [git performance issues with large device counts](Troubleshooting.md#git-performance-issues-with-large-device-counts).
+### Git performance issues with large device counts
+When you use git to store your configurations, the size of your repository will
+grow over time. This growth may lead to performance issues. If you encounter
+such issues, you should perform a Git garbage collection on your repository.
+
+Follow these steps to do so:
+
+1. Stop oxidized (no one should access the git repository while running garbage
+   collection)
+2. Make a backup of your oxidized data, especially the Git repository
+3. Change directory your oxidized git repository (as configured in oxidized
+   configuration file)
+4. Execute the command `git gc` to run the garbage collection
+5. Restart oxidized - you're done!
+
+
+### Clean obsolete nodes
+The `git` output can automatically remove the configuration of nodes no
+longer present in the [source](Sources.md).
+
+> :warning: **Limitations**
+> - this currently only works with `single_repo: true`
+> - it will ignore configurations saved as [output types](#output-types) in
+>   a separate repository.
+> - oxidized will refuse to remove old configurations
+>   when saving  [output types](#output-types) in a subdirectory of the git
+>   repository (`type_as_directory: true`), or it would remove the output
+>   type directories
+
+Oxidized will remove **any** file within the git repository not matching the
+group and hostname of the nodes configured in the source and will then commit
+the change into git.
+
+Configuration:
+
+```yaml
+output:
+  default: git
+  clean_obsolete_nodes: true
+  git:
+    single_repo: true
+    repo: "~/.config/oxidized/devices.git"
+```
 
 ## Output: Git-Crypt
 
@@ -130,9 +211,9 @@ output:
 
 Please note that user list is only updated once at creation.
 
-## Output: Http
+## Output: HTTP
 
-The HTTP output will POST a config to the specified HTTP URL. Basic username/password authentication is supported.
+The HTTP output will POST a config as JSON to the specified HTTP URL. It supports HTTP Basic Authentication, custom headers, and SSL/TLS verification control.
 
 Example HTTP output configuration:
 
@@ -140,10 +221,24 @@ Example HTTP output configuration:
 output:
   default: http
   http:
-    user: admin
-    password: changeit
     url: "http://192.168.162.50:8080/db/coll"
+    user: admin             # Optional - for HTTP basic auth
+    password: changeit      # Optional - for HTTP basic auth
+    ssl_verify: false       # Optional - verify SSL certs (default: false)
+    headers:                # Optional - custom HTTP headers
+      X-Custom-Header: "value"
+      X-API-Key: "secret"
 ```
+
+### Configuration Options
+
+| Option       | Required | Description                                             |
+|--------------|----------|---------------------------------------------------------|
+| `url`        | Yes      | Full HTTP/HTTPS URL to POST the config to               |
+| `user`       | No       | Username for HTTP Basic Authentication                  |
+| `password`   | No       | Password for HTTP Basic Authentication                  |
+| `ssl_verify` | No       | When `true`, verify SSL certificates (default: `false`) |
+| `headers`    | No       | Hash of custom HTTP headers to include in the request   |
 
 ## Output types
 

@@ -2,6 +2,15 @@
 
 You can define an arbitrary number of hooks that subscribe to different events. The hook system is modular and different kind of hook types can be enabled.
 
+1. [Events](#events)
+2. Hook types
+ * [exec](#hook-type-exec)
+ * [githubrepo](#hook-type-githubrepo)
+ * [awssns](#hook-type-awssns)
+ * [slackdiff](#hook-type-slackdiff)
+ * [ciscosparkdiff](#ciscosparkdiff)
+ * [xmppdiff](#hook-type-xmppdiff)
+
 ## Configuration
 
 Following configuration keys need to be defined for all hooks:
@@ -100,50 +109,102 @@ hooks:
 
 ## Hook type: githubrepo
 
-Note: You must not use the same name as any local repo configured under output. Make sure your 'git' output has a unique name that does not match your remote_repo.
+The `githubrepo` hook executes a `git push` to a configured `remote_repo` when
+the specified event is triggered.
 
-The `githubrepo` hook executes a `git push` to a configured `remote_repo` when the specified event is triggered.
+### Configuration keys
 
-Several authentication methods are supported:
+| Key           | Description |
+|---------------|-------------|
+| `remote_repo` | The remote repository to push to. Use a URL string (no groups) or a group dictionary (see [Using groups](#using-groups)). |
+| `username`    | Username for authentication. Defaults to the user part of the `remote_repo` URI, falling back to `git`. |
+| `password`    | Password for username/password authentication. |
+| `privatekey`  | Path to the private key file. Must be in legacy PEM format (see note below). |
+| `publickey`   | Path to the public key file (optional — inferred from `privatekey` + `.pub` if omitted). |
 
-* Provide a `password` for username + password authentication
-* Provide both a `publickey` and a `privatekey` for ssh key-based authentication
-* Provide only a `privatekey` (public key filename is assumed to be `privatekey` + "`.pub`"
-* Don't provide any credentials for ssh-agent authentication
+Notes:
+- `remote_repo` must not match the name of any local `git` output repo configured under `output`. Use unique names for each.
+- If using SSH key authentication with a passphrase-protected private key, provide the passphrase with the `OXIDIZED_SSH_PASSPHRASE` environment variable.
+- The `privatekey` must be in the legacy PEM format (`BEGIN RSA PRIVATE KEY`), not the newer OpenSSH format (`BEGIN OPENSSH PRIVATE KEY`). See [#1877](https://github.com/ytti/oxidized/issues/1877) and [#2324](https://github.com/ytti/oxidized/issues/2324).
+- To convert an existing key to PEM format, run:
+  ```shell
+  ssh-keygen -p -m PEM -f $MY_KEY_HERE
+  ```
 
-The username will be set to the relevant part of the `remote_repo` URI, with a fallback to `git`. It is also possible to provide one by setting the `username` configuration key.
+### Authentication methods
 
-For ssh key-based authentication, it is possible to set the environment variable `OXIDIZED_SSH_PASSPHRASE` to a passphrase if the private key requires it.
+Choose one of the following methods:
 
-`githubrepo` hook recognizes the following configuration keys:
+| Method                        | Required keys |
+|-------------------------------|---------------|
+| Username + password           | `username` (optional), `password` |
+| SSH key pair                  | `privatekey`, `publickey` (optional - assumed to be at `privatekey` + `.pub`) |
+| SSH agent                     | no credentials needed |
 
-* `remote_repo`: the remote repository to be pushed to.
-* `username`: username for repository auth.
-* `password`: password for repository auth.
-* `publickey`: public key file path for repository auth. (optional)
-* `privatekey`: private key file path for repository auth.
-  * NOTE: this key needs to be in the legacy PEM format, not the newer OpenSSL format [#1877](https://github.com/ytti/oxidized/issues/1877), [#2324](https://github.com/ytti/oxidized/issues/2324)
-    * To convert a key beginning with `BEGIN OPENSSH PRIVATE KEY` to the legacy PEM format, run this command:
-      `ssh-keygen -p -m PEM -f $MY_KEY_HERE`
+### Configuration examples
 
-When using groups, `remote_repo` must be a dictionary of groups that the hook should apply to. If a group is missing from the dictionary, no action will be taken.
-
-The dictionary entry can either be a url alone:
+**Username and password:**
 
 ```yaml
 hooks:
   push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: git@git.intranet:oxidized/test.git
+    username: user
+    password: pass
+```
+
+**SSH key pair:**
+
+```yaml
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: git@git.intranet:oxidized/test.git
+    publickey: /root/.ssh/id_rsa.pub
+    privatekey: /root/.ssh/id_rsa
+```
+
+
+**SSH agent:**
+
+```yaml
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: git@git.intranet:oxidized/test.git
+```
+
+### Using groups
+
+When using groups and `single_repo` is set to `true` (default) in the
+configuration section output/git, `remote_repo` must be a dictionary mapping
+group names to remote repositories. Groups not listed in the dictionary are
+silently skipped.
+
+Each entry can be either a plain URL string:
+
+```yaml
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
     remote_repo:
       routers: git@git.intranet:oxidized/routers.git
       switches: git@git.intranet:oxidized/switches.git
       firewalls: git@git.intranet:oxidized/firewalls.git
 ```
 
-... or it can be a dictionary with `url` and `privatekey` specified:
+...or a dictionary with `url` and `privatekey` to use a per-group SSH key:
 
 ```yaml
 hooks:
   push_to_remote:
+    type: githubrepo
+    events: [post_store]
     remote_repo:
       routers:
         url: git@git.intranet:oxidized/routers.git
@@ -156,33 +217,31 @@ hooks:
         privatekey: /root/.ssh/id_rsa_firewalls
 ```
 
-Both forms can be mixed and matched.
+Both forms can be mixed within the same configuration.
 
-### githubrepo hook configuration example
+### Custom branch name
 
-Authenticate with a username and a password without groups in use:
+The `githubrepo` hook uses the branch name from the
+[git output](Outputs.md#output-git) as the remote branch name. When the
+repository is first created, Oxidized uses the default branch name from
+`git config --global init.defaultBranch`. The default is `master`.
 
-```yaml
-hooks:
-  push_to_remote:
-    type: githubrepo
-    events: [post_store]
-    remote_repo: git@git.intranet:oxidized/test.git
-    username: user
-    password: pass
-```
+You can manually rename the branch after Oxidized has already created the
+repository. Be aware that you may break things, so make backups.
 
-Authenticate with the username `git` and an ssh key:
+To rename the branch after Oxidized has already created the repository:
 
-```yaml
-hooks:
-  push_to_remote:
-    type: githubrepo
-    events: [post_store]
-    remote_repo: git@git.intranet:oxidized/test.git
-    publickey: /root/.ssh/id_rsa.pub
-    privatekey: /root/.ssh/id_rsa
-```
+1. Stop oxidized.
+2. Back up your oxidized git repository.
+3. Change to your oxidized git repository directory.
+4. Inspect the current branches: `git branch -avv`
+5. Rename the local branch: `git branch -m <NewName>`
+6. Remove the stale remote-tracking reference: `git branch -r -d origin/<OldName>`
+7. Verify the result: `git branch -avv`
+8. Restart oxidized.
+
+Oxidized will push to a new remote branch. When everything is fine, you can
+remove the old branch from the remote repository.
 
 ## Hook type: awssns
 
@@ -215,7 +274,7 @@ Your AWS credentials should be stored in `~/.aws/credentials`.
 
 ## Hook type: slackdiff
 
-The `slackdiff` hook posts colorized config diffs to a [Slack](https://www.slack.com) channel of your choice. It only triggers for `post_store` events.
+The `slackdiff` hook posts colorized config diffs to a [Slack](https://www.slack.com) channel of your choice. It only triggers for `post_store` events. The used output must be capable of generating a diff. E.g. file output is not usable while git/gitcrypt will work.
 
 You will need to manually install the `slack-ruby-client` gem on your system:
 
@@ -225,16 +284,18 @@ gem install slack-ruby-client
 
 ### slackdiff hook configuration example
 
+> Please note that the channel needs to be your Slack channel ID.
+
 ```yaml
 hooks:
   slack:
     type: slackdiff
     events: [post_store]
     token: SLACK_BOT_TOKEN
-    channel: "#network-changes"
+    channel: "CHANNEL_ID"
 ```
 
-The token parameter is a Slack API token that can be generated following [this tutorial](https://api.slack.com/tutorials/tracks/getting-a-token).  Until Slack stops supporting them, legacy tokens can also be used.
+The token parameter is a Slack API token that can be generated following [this tutorial](https://api.slack.com/tutorials/tracks/getting-a-token).  Until Slack stops supporting them, legacy tokens can also be used. If the token has channels:join permission, the bot will attempt to automatically join the configured channel if necessary.
 
 Optionally you can disable snippets and post a formatted message, for instance linking to a commit in a git repo. Named parameters `%{node}`, `%{group}`, `%{model}` and `%{commitref}` are available.
 
@@ -244,12 +305,10 @@ hooks:
     type: slackdiff
     events: [post_store]
     token: SLACK_BOT_TOKEN
-    channel: "#network-changes"
+    channel: "CHANNEL_ID"
     diff: false
     message: "%{node} %{group} %{model} updated https://git.intranet/network-changes/commit/%{commitref}"
 ```
-
-Note the channel name must be in quotes.
 
 A proxy can optionally be specified if needed to reach the Slack API endpoint.
 
@@ -259,7 +318,7 @@ hooks:
     type: slackdiff
     events: [post_store]
     token: SLACK_BOT_TOKEN
-    channel: "#network-changes"
+    channel: "#CHANNEL_ID"
     proxy: http://myproxy:8080
 ```
 

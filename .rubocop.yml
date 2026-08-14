@@ -1,15 +1,25 @@
 inherit_from: .rubocop_todo.yml
 
-# Do not attempt to police vendored code
+inherit_mode:
+  merge:
+    - Exclude
+
+plugins:
+  - rubocop-rake
+  - rubocop-minitest
+  - rubocop-sequel
+
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 3.1
+  # Do not attempt to police vendored code
   Exclude:
     - 'vendor/**/*'
 
 Gemspec/DevelopmentDependencies:
   EnforcedStyle: gemspec
 
+# We prefer to use ”” by default and use ’’ to signal that interpolation is
+# intentionally turned off, but we don't enforce it.
 Style/StringLiterals:
   Enabled: false
 
@@ -17,10 +27,19 @@ Style/FrozenStringLiteralComment:
   Enabled: false
 
 Layout/LineLength:
-  Enabled: false
+  Enabled: true
+  Max: 120
+  # Too much models have long lines, which is unsafe to reduce without
+  # having an existing model unit test.
+  Exclude:
+   - lib/oxidized/model/*.rb
 
+# We do not enforce the cop in the models as it would not work with the
+# DSL style of the models
 Lint/AmbiguousRegexpLiteral:
-  Enabled: false
+  Enabled: true
+  Exclude:
+   - lib/oxidized/model/*.rb
 
 Lint/RaiseException:
   Enabled: true
@@ -36,6 +55,7 @@ Layout/HashAlignment:
   EnforcedHashRocketStyle: table
   EnforcedColonStyle: table
 
+# Explicitly allow the use of "not"
 Style/Not:
   Enabled: false
 
@@ -43,11 +63,19 @@ Style/Not:
 Style/CommandLiteral:
   EnforcedStyle: percent_x
 
+Style/ConditionalAssignment:
+  Enabled: false
+
 Style/FormatString:
   EnforcedStyle: percent
 
+Style/FileOpen:
+  Exclude:
+   - lib/oxidized/input/*.rb
+
 Style/FormatStringToken:
   EnforcedStyle: unannotated
+  AllowedMethods: ['metadata']
 
 Style/HashEachMethods:
   Enabled: true
@@ -61,9 +89,19 @@ Style/HashTransformKeys:
 Style/HashTransformValues:
   Enabled: true
 
+Style/OneClassPerFile:
+  Exclude:
+   - spec/**/*.rb
+
+Style/RegexpLiteral:
+  EnforcedStyle: slashes
+  AllowInnerSlashes: true
+
+# Explicitly allow the use of rescue as a Modifier
 Style/RescueModifier:
   Enabled: false
 
+# Intentionally left deactivated as used in the models
 Style/SymbolProc:
   Enabled: false
 
@@ -71,29 +109,41 @@ Style/Documentation:
   Enabled: false
 
 Style/ParallelAssignment:
-  Enabled: false
+  Enabled: true
 
 Metrics/MethodLength:
   Max: 50
 
 Metrics/AbcSize:
-  Max: 28
+  Enabled: false
 
 Metrics/ClassLength:
   Max: 200
 
-## Metrics/CyclomaticComplexity:
-##   Max: 7
+Metrics/ModuleLength:
+  Max: 200
 
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+# The BlockLength metric does not apply to unit tests. They are in nature
+# long and not very pretty
 Metrics/BlockLength:
   Max: 150
+  Exclude:
+   - spec/**/*_spec.rb
 
 Metrics/ParameterLists:
   Max: 6
 
+# Used in the models
 Lint/EmptyBlock:
   Enabled: false
 
-require:
-  - rubocop-rake
-  - rubocop-minitest
+# Disable the cop as string concatenation is widely used in oxidized
+Style/StringConcatenation:
+  Enabled: false
+

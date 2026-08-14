@@ -13,7 +13,7 @@ class AOSW < Oxidized::Model
 
   comment '# '
   # see /spec/model/aosw_spec.rb for prompt examples
-  prompt(/^\(?[\w\:.@-]+\)? ?[*^]?(\[[\w\/]+\] ?)?[#>] ?$/)
+  prompt /^\(?[\w:.@-]+\)? ?[*^]?(\[[\w\/]+\] ?)?[#>] ?$/
 
   # Ignore cariage returns - also for the prompt
   expect "\r" do |data, re|
@@ -25,67 +25,71 @@ class AOSW < Oxidized::Model
   end
 
   cmd :secret do |cfg|
-    cfg.gsub!(/secret (\S+)$/, 'secret <secret removed>')
-    cfg.gsub!(/enable secret (\S+)$/, 'enable secret <secret removed>')
-    cfg.gsub!(/PRE-SHARE (\S+)$/, 'PRE-SHARE <secret removed>')
-    cfg.gsub!(/ipsec (\S+)$/, 'ipsec <secret removed>')
-    cfg.gsub!(/community (\S+)$/, 'community <secret removed>')
+    cfg.gsub!(/secret (\S+)\s?$/, 'secret <secret removed>')
+    cfg.gsub!(/enable secret (\S+)\s?$/, 'enable secret <secret removed>')
+    cfg.gsub!(/PRE-SHARE (\S+)\s?$/, 'PRE-SHARE <secret removed>')
+    cfg.gsub!(/ipsec (\S+)\s?$/, 'ipsec <secret removed>')
+    cfg.gsub!(/community (\S+)\s?$/, 'community <secret removed>')
     cfg.gsub!(/ sha (\S+)/, ' sha <secret removed>')
     cfg.gsub!(/ des (\S+)/, ' des <secret removed>')
     cfg.gsub!(/mobility-manager (\S+) user (\S+) (\S+)/, 'mobility-manager \1 user \2 <secret removed>')
-    cfg.gsub!(/mgmt-user (\S+) (root|guest-provisioning|network-operations|read-only|location-api-mgmt) (\S+)$/, 'mgmt-user \1 \2 <secret removed>') # MAS & Wireless Controler
-    cfg.gsub!(/mgmt-user (\S+) (\S+)( (read-only|guest-mgmt))?$/, 'mgmt-user \1 <secret removed> \3') # IAP
+    cfg.gsub!(/mgmt-user (\S+) (root|guest-provisioning|network-operations|read-only|location-api-mgmt) (\S+)\s?$/, 'mgmt-user \1 \2 <secret removed>') # MAS & Wireless Controler
+    cfg.gsub!(/mgmt-user (\S+) (\S+)( (read-only|guest-mgmt))?\s?$/, 'mgmt-user \1 <secret removed> \3') # IAP
     # MAS format: mgmt-user <username> <accesslevel> <password hash>
     # IAP format (root user): mgmt-user <username> <password hash>
     # IAP format: mgmt-user <username> <password hash> <access level>
-    cfg.gsub!(/key (\S+)$/, 'key <secret removed>')
-    cfg.gsub!(/wpa-passphrase (\S+)$/, 'wpa-passphrase <secret removed>')
-    cfg.gsub!(/bkup-passwords (\S+)$/, 'bkup-passwords <secret removed>')
-    cfg.gsub!(/user (\S+) (\S+) (\S+)$/, 'user \1 <secret removed> \3')
-    cfg.gsub!(/virtual-controller-key (\S+)$/, 'virtual-controller-key <secret removed>')
+    cfg.gsub!(/key (\S+)\s?$/, 'key <secret removed>')
+    cfg.gsub!(/vrrp-passphrase (\S+)\s?$/, 'vrrp-passphrase <secret removed>')
+    cfg.gsub!(/wpa-passphrase (\S+)\s?$/, 'wpa-passphrase <secret removed>')
+    cfg.gsub!(/bkup-passwords (\S+)\s?$/, 'bkup-passwords <secret removed>')
+    cfg.gsub!(/ap-console-password (\S+)\s?$/, 'ap-console-password <secret removed>')
+    cfg.gsub!(/virtual-controller-key (\S+)\s?$/, 'virtual-controller-key <secret removed>')
     cfg
   end
 
   cmd 'show version' do |cfg|
-    cfg = cfg.each_line.reject { |line| line.match(/(Switch|AP) uptime/i) || line.match(/Reboot Time and Cause/i) }
-    rstrip_cfg comment cfg.join
+    cfg = cfg.reject_lines [
+      /(Switch|AP) uptime/i,
+      /Reboot Time and Cause/i
+    ]
+    rstrip_cfg comment cfg
   end
 
   cmd 'show inventory' do |cfg|
-    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/ # Don't show for unsupported devices (IAP and MAS)
+    # Don't show for unsupported devices (IAP and MAS)
+    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/
     rstrip_cfg clean cfg
   end
 
   cmd 'show slots' do |cfg|
-    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/ # Don't show for unsupported devices (IAP and MAS)
+    # Don't show for unsupported devices (IAP and MAS)
+    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/
     rstrip_cfg comment cfg
   end
 
   cmd 'show license' do |cfg|
-    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/ # Don't show for unsupported devices (IAP and MAS)
+    # Don't show for unsupported devices (IAP and MAS)
+    cfg = "" if cfg =~ /(Invalid input detected at '\^' marker|Parse error)/
     rstrip_cfg comment cfg
   end
 
   cmd 'show license passphrase' do |cfg|
-    cfg = "" if cfg.match(/(Invalid input detected at '\^' marker|Parse error)/) # Don't show for unsupported devices (IAP and MAS)
+    # Don't show for unsupported devices (IAP and MAS)
+    cfg = "" if cfg.match /(Invalid input detected at '\^' marker|Parse error)/
     rstrip_cfg comment cfg
   end
 
   cmd 'show running-config' do |cfg|
-    out = []
-    cfg.each_line do |line|
-      next if line =~ /^controller config \d+$/
-      next if line =~ /^Building Configuration/
-
-      out << line.strip
-    end
-    out = out.join "\n"
-    out << "\n"
+    cfg = cfg.reject_lines [
+      /^controller config \d+$/,
+      /^Building Configuration/
+    ]
+    rstrip_cfg cfg
   end
 
   cfg :telnet do
-    username(/^User:\s*/)
-    password(/^Password:\s*/)
+    username /^User:\s*/
+    password /^Password:\s*/
   end
 
   cfg :telnet, :ssh do
@@ -117,7 +121,7 @@ class AOSW < Oxidized::Model
       next if line =~ /Output \d Config/i
       next if line =~ /(Tachometers|Temperatures|Voltages)/
       next if line =~ /((Card|CPU) Temperature|Chassis Fan|VMON1[0-9])/
-      next if line =~ /[0-9]+\s+(RPMS?|m?V|C)/i
+      next if line =~ /[0-9.]{1,6}\s+(RPMS?|m?V|C|W)/i
 
       out << line.strip
     end

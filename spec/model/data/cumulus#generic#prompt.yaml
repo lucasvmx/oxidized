@@ -1,0 +1,10 @@
+pass:
+  - 'root@spine1-nyc2:~# '
+  # Prompts within mgmt vrf
+  - 'cumulus@cumulus:mgmt:~$ '
+  - 'root@cumulus:mgmt:~# '
+  # Issue #3812
+  - 'username@hostname~$'
+  - 'username@hostname:mgmt:~$'
+pass_with_expect:
+  - "\e[?2004hroot@spine1-nyc2:~# "

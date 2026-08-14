@@ -4,11 +4,11 @@ class FabricOS < Oxidized::Model
   # Brocade Fabric OS model #
   ## FIXME: Only ssh exec mode support, no telnet, no ssh screenscraping
 
-  prompt /^([\w]+:+[\w]+[>]\s)$/
+  prompt /^(\w+:+\w+>\s)$/
   comment '# '
 
   cmd 'chassisShow' do |cfg|
-    comment cfg.each_line.reject { |line| line.match(/Time Awake:/) || line.match(/Power Usage \(Watts\):/) || line.match(/Power Usage:/) || line.match(/Time Alive:/) || line.match(/Update:/) }.join
+    comment cfg.each_line.reject { |line| line.match(/Time Awake:/) || line.match(/Power Usage \(Watts\):/) || line.match(/Power Usage:/) || line.match(/Time Alive:/) || line.match(/Update:/) || line.match(/PS Voltage input:/) }.join
   end
 
   cmd 'configShow -all' do |cfg|

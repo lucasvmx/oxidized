@@ -5,6 +5,8 @@ module Oxidized
   class NodeNotFound < OxidizedError; end
 
   class Nodes < Array
+    include SemanticLogger::Loggable
+
     attr_accessor :source, :jobs
     alias put unshift
     def load(node_want = nil)
@@ -12,7 +14,7 @@ module Oxidized
         new = []
         @source = Oxidized.config.source.default
         Oxidized.mgr.add_source(@source) || raise(MethodNotFound, "cannot load node source '#{@source}', not found")
-        Oxidized.logger.info "lib/oxidized/nodes.rb: Loading nodes"
+        logger.info "Loading nodes"
         nodes = Oxidized.mgr.source[@source].new.load node_want
         nodes.each do |node|
           # we want to load specific node(s), not all of them
@@ -22,21 +24,24 @@ module Oxidized
             node_obj = Node.new node
             new.push node_obj
           rescue ModelNotFound => e
-            Oxidized.logger.error "node %s raised %s with message '%s'" % [node, e.class, e.message]
+            logger.error "node %s raised %s with message '%s'" % [node, e.class, e.message]
           rescue Resolv::ResolvError => e
-            Oxidized.logger.error "node %s is not resolvable, raised %s with message '%s'" % [node, e.class, e.message]
+            logger.error "node %s is not resolvable, raised %s with message '%s'" % [node, e.class, e.message]
           end
         end
         size.zero? ? replace(new) : update_nodes(new)
-        Oxidized.logger.info "lib/oxidized/nodes.rb: Loaded #{size} nodes"
+        Output.clean_obsolete_nodes(self) if node_want.nil?
+        logger.info "Loaded #{size} nodes"
       end
     end
 
     def node_want?(node_want, node)
       return true unless node_want
 
+      # rubocop:disable Style/RedundantParentheses
       node_want_ip = (IPAddr.new(node_want) rescue false)
       name_is_ip   = (IPAddr.new(node[:name]) rescue false)
+      # rubocop:enable Style/RedundantParentheses
       # rubocop:todo Lint/DuplicateBranch
       if name_is_ip && (node_want_ip == node[:name])
         true
@@ -61,6 +66,9 @@ module Oxidized
       end
     end
 
+    # Returns the configuration of group/node_name
+    #
+    # #fetch is called by oxidzed-web
     def fetch(node_name, group)
       yield_node_output(node_name) do |node, output|
         output.fetch node, group
@@ -69,8 +77,9 @@ module Oxidized
 
     # @param node [String] name of the node moved into the head of array
     def next(node, opt = {})
-      return unless waiting.find_node_index(node)
+      return if running.find_index(node)
 
+      logger.info "Add node #{node} to running jobs"
       with_lock do
         n = del node
         n.user = opt['user']
@@ -79,6 +88,8 @@ module Oxidized
         n.from = opt['from']
         # set last job to nil so that the node is picked for immediate update
         n.last = nil
+        # set nexted to true so that the node will not be skipped with interval 0
+        n.nexted = true
         put n
         jobs.increment if Oxidized.config.next_adds_job?
       end
@@ -98,6 +109,9 @@ module Oxidized
       find_index(node) || raise(NodeNotFound, "unable to find '#{node}'")
     end
 
+    # Returns all stored versions of group/node_name
+    #
+    # Called by oxidized-web
     def version(node_name, group)
       yield_node_output(node_name) do |node, output|
         output.version node, group
@@ -116,6 +130,10 @@ module Oxidized
       end
     end
 
+    def find_index(node)
+      index { |e| [e.name, e.ip].include? node }
+    end
+
     private
 
     def initialize(opts = {})
@@ -131,10 +149,6 @@ module Oxidized
 
     def with_lock(...)
       @mutex.synchronize(...)
-    end
-
-    def find_index(node)
-      index { |e| [e.name, e.ip].include? node }
     end
 
     # @param node node which is removed from nodes list

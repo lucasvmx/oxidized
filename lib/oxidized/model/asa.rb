@@ -15,9 +15,8 @@ class ASA < Oxidized::Model
     cfg.gsub! /enable password (\S+) (.*)/, 'enable password <secret hidden> \2'
     cfg.gsub! /^passwd (\S+) (.*)/, 'passwd <secret hidden> \2'
     cfg.gsub! /username (\S+) password (\S+) (.*)/, 'username \1 password <secret hidden> \3'
-    cfg.gsub! /(ikev[12] ((remote|local)-authentication )?pre-shared-key) (\S+)/, '\1 <secret hidden>'
-    cfg.gsub! /^(aaa-server TACACS\+? \(\S+\) host[^\n]*\n(\s+[^\n]+\n)*\skey) \S+$/mi, '\1 <secret hidden>'
-    cfg.gsub! /^(aaa-server \S+ \(\S+\) host[^\n]*\n(\s+[^\n]+\n)*\s+key) \S+$/mi, '\1 <secret hidden>'
+    cfg.gsub! /(ikev[12] ((remote|local)-authentication )?pre-shared-key( hex)?) (\S+)/, '\1 <secret hidden>'
+    cfg.gsub! /^(aaa-server \S+(?: \(\S+\))? host \S+\n(?: [^\n]+\n)* +key) \S+$/mi, '\1 <secret hidden>'
     cfg.gsub! /ldap-login-password (\S+)/, 'ldap-login-password <secret hidden>'
     cfg.gsub! /^snmp-server host (.*) community (\S+)/, 'snmp-server host \1 community <secret hidden>'
     cfg.gsub! /^(failover key) .+/, '\1 <secret hidden>'
@@ -33,12 +32,13 @@ class ASA < Oxidized::Model
   end
 
   cmd 'show version' do |cfg|
-    # avoid commits due to uptime / ixo-router01 up 2 mins 28 secs / ixo-router01 up 1 days 2 hours
-    cfg = cfg.each_line.reject { |line| line.match /(\s+up\s+\d+\s+)|(.*days.*)/ }
-    cfg = cfg.join
-    cfg.gsub! /^Configuration has not been modified since last system restart.*\n/, ''
-    cfg.gsub! /^Configuration last modified by.*\n/, ''
-    comment cfg
+    comment cfg.reject_lines [
+      # avoid commits due to uptime / ixo-router01 up 2 mins 28 secs / ixo-router01 up 1 days 2 hours
+      /(\s+up\s+\d+\s+)|(.*days.*)/,
+      /^Configuration has not been modified since last system restart.*/,
+      /^Configuration last modified by.*/,
+      /^Start-up time.*/
+    ]
   end
 
   cmd 'show inventory' do |cfg|
@@ -96,7 +96,8 @@ class ASA < Oxidized::Model
         contexts = systemcfg.scan(/^context (\S+)$/)
         files = systemcfg.scan(/config-url (\S+)$/)
         contexts.each_with_index do |cont, i|
-          allcfg = allcfg + "\n\n----------========== [ CONTEXT " + cont.join(" ") + " FILE " + files[i].join(" ") + " ] ==========----------\n\n"
+          allcfg = allcfg + "\n\n----------========== [ CONTEXT " + cont.join(" ") +
+                   " FILE " + files[i].join(" ") + " ] ==========----------\n\n"
           cmd "more " + files[i].join(" ") do |cfgcontext|
             allcfg = allcfg + "\n\n" + cfgcontext
           end

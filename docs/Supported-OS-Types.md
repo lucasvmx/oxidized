@@ -2,26 +2,29 @@
 
 |Vendor              |OS model                      |oxidized model                                   |model maintainers|comment / model notes|
 |--------------------|------------------------------|-------------------------------------------------|-----------------|---------------------|
+|-generic-           |Cisco-like                    |[defacto](/lib/oxidized/model/defacto.rb)        |@ytti, @robertcheramy|[The defacto model may work on cisco like CLIs](/docs/Creating-Models.md#use-the-defacto-model)|
+|6WIND               |VSR                           |[sixwind](/lib/oxidized/model/sixwind.rb)        |@hcaldicott      |
 |A10 Networks        |ACOS                          |[acos](/lib/oxidized/model/acos.rb)              |                 |
 |Accedian Performance Elements (NIDs)|AEN           |[aen](/lib/oxidized/model/aen.rb)
 |Acme Packet         |ACMEPACKET                    |[acmepacket](/lib/oxidized/model/acmepacket.rb)
 |AddPack             |AddPack                       |[addpack](/lib/oxidized/model/addpack.rb)
 |Adtran              |Total Access (AOS)            |[adtran](/lib/oxidized/model/adtran.rb)
 |                    |ADVA                          |[adva](/lib/oxidized/model/adva.rb)              |                 |[ADVA](Model-Notes/ADVA.md)
-|Alcatel-Lucent      |AOS                           |[aos](/lib/oxidized/model/aos.rb)
-|                    |AOS7                          |[aos7](/lib/oxidized/model/aos7.rb)
+|Alcatel-Lucent      |AOS                           |[aos](/lib/oxidized/model/aos.rb)                |                 |AOS6 - vxworks-based
+|                    |AOS7                          |[aos7](/lib/oxidized/model/aos7.rb)              |                 |AOS7 and AOS8 - linux-based
 |                    |ISAM                          |[isam](/lib/oxidized/model/isam.rb)
 |                    |SR OS (Formerly TiMOS)        |[sros](/lib/oxidized/model/sros.rb)
 |                    |Wireless                      |[aosw](/lib/oxidized/model/aosw.rb)              |                 |Same model as Aruba Wireless
 |Allied Telesis      |Alliedware Plus               |[awplus](/lib/oxidized/model/awplus.rb)
 |                    |AT-8000S, AT-8000GS series    |[powerconnect](/lib/oxidized/model/powerconnect.rb)
 |Alvarion            |BreezeACCESS                  |[alvarion](/lib/oxidized/model/alvarion.rb)
-|APC                 |AOS                           |[apc_aos](/lib/oxidized/model/apc_aos.rb)        |@robertcheramy   |[APC AOS](Model-Notes/APC_AOS.md)
+|APC                 |AOS                           |[apcaos](/lib/oxidized/model/apcaos.rb)          |@robertcheramy   |[APC](Model-Notes/APC.md)
 |Arbor Networks      |ArbOS                         |[arbos](/lib/oxidized/model/arbos.rb)            |                 |[ArbOS](Model-Notes/ArbOS.md)
 |Arista              |EOS                           |[eos](/lib/oxidized/model/eos.rb)                |                 |[EOS](Model-Notes/EOS.md)
 |Arris               |C4CMTS                        |[c4cmts](/lib/oxidized/model/c4cmts.rb)
-|Aruba               |AOS-CX                        |[aoscx](/lib/oxidized/model/aoscx.rb)            |@robertcheramy
-|                    |AOSW                          |[Aaosw](/lib/oxidized/model/aosw.rb)
+|Aruba               |AOS-CX                        |[aoscx](/lib/oxidized/model/aoscx.rb)            |@robertcheramy   |[HPE Aruba](Model-Notes/HPEAruba.md)
+|                    |AOSW                          |[aosw](/lib/oxidized/model/aosw.rb)                                |[HPE Aruba](Model-Notes/HPEAruba.md)
+|                    |ArubaInstant                  |[arubainstant](/lib/oxidized/model/arubainstant.rb)|@robertcheramy |[HPE Aruba](Model-Notes/HPEAruba.md)
 |Asterfusion         |AsterNOS                      |[asternos](/lib/oxidized/model/asternos.rb)
 |AudioCodes          |AudioCodes                    |[audiocodes](/lib/oxidized/model/audiocodes.rb)
 |                    |MediaPack MP-1xx, Mediant1000 |[audiocodesmp](/lib/oxidized/model/audiocodesmp.rb)
@@ -29,10 +32,11 @@
 |                    |BOSS (Baystack Operating System Software)|[boss](/lib/oxidized/model/boss.rb)
 |BDCOM               |S2200PB, S2200-B, S2500-B, S2500-C, S2500PB, S2500-P, S2900 series|[bdcom](/lib/oxidized/model/bdcom.rb)
 |Brocade             |FabricOS                      |[fabricos](/lib/oxidized/model/fabricos.rb)
+|                    |Enhanced Fabric OS            |[efos](/lib/oxidized/model/efos.rb)
 |                    |FastIron                      |[fastiron](/lib/oxidized/model/fastiron.rb)
 |                    |IronWare                      |[ironware](/lib/oxidized/model/ironware.rb)
 |                    |NOS (Network Operating System)|[nos](/lib/oxidized/model/nos.rb)
-|                    |Vyatta                        |[vyatta](/lib/oxidized/model/vyatta.rb)
+|                    |Vyatta                        |[vyatta](/lib/oxidized/model/vyatta.rb)          |                 | Also used for Vyos <= 1.2.x, for newer versions use the VyOS model
 |                    |6910                          |[br6910](/lib/oxidized/model/br6910.rb)
 |                    |SLX-OS                        |[slxos](/lib/oxidized/model/slxos.rb)
 |Calix               |AXOS                          |[axos](/lib/oxidized/model/axos.rb)
@@ -42,12 +46,14 @@
 |Centec Networks     |CNOS                          |[cnos](/lib/oxidized/model/cnos.rb)
 |Check Point         |GaiaOS                        |[gaiaos](/lib/oxidized/model/gaiaos.rb)
 |Ciena               |SAOS                          |[saos](/lib/oxidized/model/saos.rb)
+|                    |SAOS10                        |[saos10](/lib/oxidized/model/saos10.rb)
 |Cisco               |ACSW                          |[acsw](/lib/oxidized/model/acsw.rb)
 |                    |AireOS                        |[aireos](/lib/oxidized/model/aireos.rb)          |                 |[AireOS](Model-Notes/AireOS.md)
 |                    |ASA                           |[asa](/lib/oxidized/model/asa.rb)                |@robertcheramy
 |                    |AsyncOS                       |[asyncos](/lib/oxidized/model/asyncos.rb)
 |                    |CatOS                         |[catos](/lib/oxidized/model/catos.rb)
 |                    |Cisco Catalyst Express        |[ciscoce](/lib/oxidized/model/ciscoce.rb)
+|                    |ExaLink Fusion (Nexus 3550-F) |[exalink](/lib/oxidized/model/exalink.rb)        |@obol89          |[ExaLink](Model-Notes/ExaLink.md)
 |                    |FireLinuxOS                   |[firelinuxos](/lib/oxidized/model/firelinuxos.rb)
 |                    |IOS                           |[ios](/lib/oxidized/model/ios.rb)                |@robertcheramy   |[IOS](Model-Notes/IOS.md)
 |                    |IOSXR                         |[iosxr](/lib/oxidized/model/iosxr.rb)
@@ -70,9 +76,11 @@
 |DELL                |PowerConnect                  |[powerconnect](/lib/oxidized/model/powerconnect.rb)
 |                    |AOSW                          |[aosw](/lib/oxidized/model/aosw.rb)              |                 |Same model as Aruba Wireless
 |                    |DellX                         |[dellx](/lib/oxidized/model/dellx.rb)
+|                    |Dell EMC Networking OS6       |[os6](/lib/oxidized/model/os6.rb)                |                 |[Dell EMC Networking OS6](Model-Notes/OS6.md)
 |                    |Dell EMC Networking OS10      |[os10](/lib/oxidized/model/os10.rb)              |                 |[Dell EMC Networking OS10](Model-Notes/OS10.md)
 |D-Link              |D-Link                        |[dlink](/lib/oxidized/model/dlink.rb)
 |                    |D-Link cisco like CLI         |[dlinknextgen](/lib/oxidized/model/dlinknextgen.rb)
+|Eaton               |Gigabit Network Card          |[eatonnetwork](/lib/oxidized/model/eatonnetwork.rb) |@thanegill
 |ECI Telecom         |ECIapollo                     |[eciapollo](/lib/oxidized/model/eciapollo.rb)
 |EdgeCore            |ECS3510, ES3526XA-V2, ES3528M |[edgecos](/lib/oxidized/model/edgecos.rb)
 |Eltex               |Eltex                         |[eltex](/lib/oxidized/model/eltex.rb)
@@ -92,12 +100,15 @@
 |Firebrick           |FBxxxx                        |[firebrick](/lib/oxidized/model/firebrick.rb)
 |Force10             |DNOS                          |[dnos](/lib/oxidized/model/dnos.rb)
 |                    |FTOS                          |[ftos](/lib/oxidized/model/ftos.rb)
-|FortiGate           |FortiOS                       |[fortios](/lib/oxidized/model/fortios.rb)        |                 |[FortiOS](Model-Notes/FortiOS.md)
-|FortiWLC            |FortiWLC                      |[fortiwlc](/lib/oxidized/model/fortiwlc.rb)
+|Fortinet            |FortiGate                     |[fortigate](/lib/oxidized/model/fortigate.rb)    |@robertcheramy   |[Fortinet](Model-Notes/Fortinet.md)
+|                    |FortiOS                       |[fortios](/lib/oxidized/model/fortios.rb)        |@robertcheramy   |[Fortinet](Model-Notes/Fortinet.md)
+|                    |FortiWLC                      |[fortiwlc](/lib/oxidized/model/fortiwlc.rb)
 |Fujitsu             |PRIMERGY Blade switch 1/10Gbe |[fujitsupy](/lib/oxidized/model/fujitsupy.rb)
 |                    |1FINITY Switches              |[onefinity](/lib/oxidized/model/onefinity.rb)
+|[Garderos](https://garderos.com/) |GRS (Garderos Router Software) |[garderos](/lib/oxidized/model/garderos.rb) | @robertcheramy  |Routers for harsh environments
 |GCOM Technologies   |Broadband Network Platform Software|[gcombnps](/lib/oxidized/model/gcombnps.rb)
 |Grandstream Networks|GSX                           |[grandstream](/lib/oxidized/model/grandstream.rb)
+|                    |HT8xx                         |[grandstream](/lib/oxidized/model/grandstreamht8xx.rb) | @mklopocki | [Grandstream](Model-Notes/GrandstreamHT8xx.md)
 |Hatteras            |Hatteras                      |[hatteras](/lib/oxidized/model/hatteras.rb)
 |Hillstone Networks  |StoneOS                       |[stoneos](/lib/oxidized/model/stoneos.rb)
 |Hirschmann          |Classic                       |[hirschmann](/lib/oxidized/model/hirschmann.rb)
@@ -111,7 +122,9 @@
 |Huawei              |VRP                           |[vrp](/lib/oxidized/model/vrp.rb)                |                 |[VRP-Huawei](Model-Notes/VRP-Huawei.md)
 |                    |SmartAX series                |[smartax](/lib/oxidized/model/smartax.rb)        |                 |[SmartAX-Huawei](Model-Notes/SmartAX-Huawei.md)
 |Icotera             |6400 series                   |[icotera](/lib/oxidized/model/icotera.rb)
+|Ingate              |SIParator/Firewalls           |[ingate](/lib/oxidized/model/ingate.rb)          |@thanegill
 |IP Infusion         |OcNOS                         |[ocnos](/lib/oxidized/model/ocnos.rb)
+|Ivanti              |Ivanti Connect Secure (ICS)   |[ivanti](/lib/oxidized/model/ivanti.rb)          |@candleflip      |[ICS](Model-Notes/IvantiConnectSecure.md)
 |Juniper             |JunOS                         |[junos](/lib/oxidized/model/junos.rb)            |                 |[MX/QFX/EX/SRX/J Series](Model-Notes/JunOS.md)
 |                    |ScreenOS (Netscreen)          |[screenos](/lib/oxidized/model/screenos.rb)
 |LANCOM Systems GmbH |LCOS                          |[lancom](/lib/oxidized/model/lancom.rb)
@@ -120,16 +133,18 @@
 |Linuxgeneric        |CentOS                        |[linuxgeneric](/lib/oxidized/model/linuxgeneric.rb)|               |[LinuxGeneric](Model-Notes/LinuxGeneric.md)
 |Mellanox            |MLNX-OS                       |[mlnxos](/lib/oxidized/model/mlnxos.rb)
 |                    |Voltaire                      |[voltaire](/lib/oxidized/model/voltaire.rb)
-|Mikrotik            |RouterOS                      |[routeros](/lib/oxidized/model/routeros.rb)      |@systeembeheerder  |[RouterOS](Model-Notes/RouterOS.md)
+|Mikrotik            |RouterOS                      |[routeros](/lib/oxidized/model/routeros.rb)      |                 |[RouterOS](Model-Notes/RouterOS.md)
 |                    |SwOS and SwOS Lite            |[swos](/lib/oxidized/model/swos.rb)
 |Mimosa              |Mimosa (B11)                  |[mimosab11](/lib/oxidized/model/mimosab11.rb)
 |Motorola            |RFS                           |[mtrlrfs](/lib/oxidized/model/mtrlrfs.rb)
 |MRV                 |MasterOS                      |[masteros](/lib/oxidized/model/masteros.rb)
 |                    |FiberDriver                   |[fiberdriver](/lib/oxidized/model/fiberdriver.rb)
 |NEC                 |NEC IX                        |[necix](/lib/oxidized/model/necix.rb)
+|Netgate             |TNSR                          |[tnsr](/lib/oxidized/model/tnsr.rb)              |@Vantomas
 |Netgear             |Netgear switches              |[netgear](/lib/oxidized/model/netgear.rb)        |                 |[Netgear](Model-Notes/Netgear.md)
 |Netonix             |WISP Switch (As Netonix)      |[netonix](/lib/oxidized/model/netonix.rb)
 |Nokia (formerly TiMetra, Alcatel, Alcatel-Lucent)|SR OS (TiMOS)|[sros](/lib/oxidized/model/sros.rb)  |                 |[Nokia ISAM](Model-Notes/Nokia.md)
+|                    |SR OS Model-Driven CLI (7705 SAR, 7210 SAS, 7450 ESS, 7750 SR, 7950 XRS, NSP) |[srosmd](/lib/oxidized/model/srosmd.rb) | |
 |OneAccess           |OneOS                         |[oneos](/lib/oxidized/model/oneos.rb)
 |                    |TDRE                          |[tdre](/lib/oxidized/model/tdre.rb)
 |OpenBSD             |                              |[openbsd](/lib/oxidized/model/openbsd.rb)
@@ -138,18 +153,22 @@
 |OPNsense            |                              |[opnsense](/lib/oxidized/model/opnsense.rb)
 |Palo Alto           |PanOS API                     |[panos_api](/lib/oxidized/model/panos_api.rb)    |                 |[PanOS_API](Model-Notes/PanOS_API.md)
 |                    |PanOS                         |[panos](/lib/oxidized/model/panos.rb)
+|[Perle](https://www.perle.com)|IOLAN Console Servers|[perle](/lib/oxidized/model/perle.rb)           |@robertcheramy
 |PLANET SG/SGS Switches|                            |[planet](/lib/oxidized/model/planet.rb)
 |pfSense             |                              |[pfsense](/lib/oxidized/model/pfsense.rb)
 |Pure Storage        |PurityOS                      |[purityos](/lib/oxidized/model/purityos.rb)
 |Radware             |AlteonOS                      |[alteonos](/lib/oxidized/model/alteonos.rb)
 |Raisecom            |Raisecom                      |[raisecom](/lib/oxidized/model/raisecom.rb)
+|Riverbed            |SteelHead                     |[riverbed](/lib/oxidized/model/riverbed.rb)
 |Ruijie Networks     |RGOS                          |[rgos](/lib/oxidized/model/rgos.rb)
 |QTECH               |QSW-2800, QSW-3400, QSW-3450, QSW-3500|[qtech](/lib/oxidized/model/qtech.rb)
 |Quanta              |Quanta / VxWorks 6.6 (1.1.0.8)|[quantaos](/lib/oxidized/model/quantaos.rb)
 |Siklu               |EtherHaul                     |[siklu](/lib/oxidized/model/siklu.rb)            |@bdg-robert
 |                    |Multihaul TG                  |[siklumhtg](/lib/oxidized/model/siklumhtg.rb)    |@bdg-robert      |[Siklu Multihaul TG](Model-Notes/SikluMHTG.md)
 |Seiko Solutions     |SmartCS, SmartCS mini         |[smartcs](/lib/oxidized/model/smartcs.rb)
+|SmartByte           |LT-S8228G series              |[smartbyte](/lib/oxidized/model/smartbyte.rb)    |@freddy36
 |SonicWALL           |SonicOS                       |[sonicos](/lib/oxidized/model/sonicos.rb)
+|[SONiC](https://sonicfoundation.dev/) |Enterprise SONiC |[enterprise_sonic](/lib/oxidized/model/enterprise_sonic.rb) | |
 |SNR                 |SNR-S300G, S2xxx, S3xxx, S4xxx|[dcnos](/lib/oxidized/model/dcnos.rb)
 |Speedtouch          |Thomson Speedtouch            |[speedtouch](/lib/oxidized/model/speedtouch.rb)
 |Supermicro          |SSE-G2252, G2252P             |[edgecos](/lib/oxidized/model/edgecos.rb)
@@ -161,17 +180,24 @@
 |Trango Systems      |Trango                        |[trango](/lib/oxidized/model/trango.rb)
 |TrueNAS             |TrueNAS                       |[truenas](/lib/oxidized/model/truenas.rb)
 |TPLink              |TPLink                        |[tplink](/lib/oxidized/model/tplink.rb)
+|                    |DeltaStream GPON OLT          |[tplink](/lib/oxidized/model/tplink.rb)          |@Vantomas        |[TPLink](Model-Notes/TPLink.md)|
 |                    |TL-SL5428                     |[edgecos](/lib/oxidized/model/edgecos.rb)
 |                    |TL-SL3428                     |[powerconnect](/lib/oxidized/model/powerconnect.rb)
 |Ubiquiti            |AirOS                         |[airos](/lib/oxidized/model/airos.rb)
 |                    |Edgeos                        |[edgeos](/lib/oxidized/model/edgeos.rb)
 |                    |EdgeSwitch                    |[edgeswitch](/lib/oxidized/model/edgeswitch.rb)
 |                    |AirFiber                      |[airfiber](/lib/oxidized/model/airfiber.rb)
+|                    |UnifiAP                       |[unifiap](/lib/oxidized/model/unifiap.rb)        |@clifcox         |Also suports AirOS, and some Unifi switches
+|Uplink              |EP4440-DP                     |[EP4440](/lib/oxidized/model/uplinkolt.rb)       |                 |Might support all EP4440 series
 |VMWare              |NSX Edge (configuration)      |[nsxconfig](/lib/oxidized/model/nsxconfig.rb)
 |                    |NSX Edge (firewall rules)     |[nsxfirewall](/lib/oxidized/model/nsxfirewall.rb)
 |                    |NSX Distributed Firewall      |[nsxdfw](/lib/oxidized/model/nsxdfw.rb)
+|VSOL                |GPON OLT                      |[vsololt](/lib/oxidized/model/vsololt.rb)        |@Vantomas        |
+|VYOS Networks       |VYOS                          |[vyos](/lib/oxidized/model/vyos.rb)              |                 |Fork of Vyatta, tracking the supported versions (>= 1.4.x)
 |Watchguard          |Fireware OS                   |[firewareos](/lib/oxidized/model/firewareos.rb)
+|Waystream (PacketFront)|iBOS (Intelligent Broadband OS)|[ibos](/lib/oxidized/model/ibos.rb)
 |Westell             |Westell 8178G, Westell 8266G  |[weos](/lib/oxidized/model/weos.rb)
+|Yadro               |KornfeldOS                    |[kornfeldos](/lib/oxidized/model/kornfeldos.rb) 
 |YAMAHA              |YAMAHA NVR/RTX Series         |[yamaha](/lib/oxidized/model/yamaha.rb)
 |Zhone               |Zhone (OLT and MX)            |[zhoneolt](/lib/oxidized/model/zhoneolt.rb)
 |ZPE                 |Nodegrid OS                   |[nodegrid](/lib/oxidized/model/nodegrid.rb)
@@ -179,5 +205,7 @@
 |Zyxel               |ZyNOS                         |[zynos](/lib/oxidized/model/zynos.rb)            |                 |[XGS4600 Series](Model-Notes/XGS4600-Zyxel.md)
 |                    |ZyNOS GS-series variant       |[zynosgs](/lib/oxidized/model/zynosgs.rb)
 |                    |ZyNOS ADSL                    |[zynosadsl](/lib/oxidized/model/zynosadsl.rb)
+|                    |ZyNOS CLI (DSLAMs, e.g. SAM1316)|[zynoscli](/lib/oxidized/model/zynoscli.rb)
+|                    |ZyNOS MGS series              |[zynosmgs](/lib/oxidized/model/zynosmgs.rb)
 |                    |NDMS                          |[ndms](/lib/oxidized/model/ndms.rb)
 |                    |1308                          |[zy1308](/lib/oxidized/model/zy1308.rb)
